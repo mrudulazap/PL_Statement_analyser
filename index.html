@@ -208,12 +208,12 @@ form.ea input:focus,form.ea select:focus{outline:2px solid var(--brand);outline-
       <h1>Find the costs that <em>crept up</em> while revenue grew.</h1>
       <p class="lede">Upload your P&amp;L and balance sheet. DriftLine shows which cost lines have drifted against revenue, what bringing them back is worth, and how much cash is stuck in stock and unpaid invoices.</p>
       <div class="cta-row">
-        <a class="btn primary lg" href="/app" data-track="cta_click" data-track-location="hero" data-track-target="app">Run a free diagnostic</a>
+        <a class="btn primary lg" href="/app" data-track="cta_click" data-track-location="hero" data-track-target="app">Analyse your statements</a>
         <a class="btn lg" href="/app#sample" data-track="cta_click" data-track-location="hero" data-track-target="sample">See a sample report</a>
       </div>
       <ul class="checks">
         <li><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Free, no sign-up</li>
-        <li><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Excel or CSV, Schedule III labels</li>
+        <li><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>PDF, Excel or CSV</li>
         <li><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Analysed on your device</li>
       </ul>
     </div>
@@ -275,7 +275,7 @@ form.ea input:focus,form.ea select:focus{outline:2px solid var(--brand);outline-
       <h2>From statements to a cost diagnosis in three steps.</h2>
     </div>
     <div class="steps">
-      <div class="step"><div class="n">Step 1</div><h3>Upload two statements</h3><p>Your P&amp;L and balance sheet for three or more years, as Excel or CSV. Schedule III, GAAP and plain-English line names are recognised automatically.</p></div>
+      <div class="step"><div class="n">Step 1</div><h3>Upload your statements</h3><p>A results PDF or annual report, or your P&amp;L and balance sheet as Excel or CSV. Schedule III, GAAP and plain-English line names are recognised automatically.</p></div>
       <div class="step"><div class="n">Step 2</div><h3>See where costs drifted</h3><p>Each cost line is compared with its best year as a share of revenue. You see the gap in rupees, and choose how much of it you think is realistic to recover.</p></div>
       <div class="step"><div class="n">Step 3</div><h3>Know what to check next</h3><p>Every finding lists what the statements can't show, the records to pull, and the usual fixes. Ask Plop, the built-in analyst, anything about your numbers.</p></div>
     </div>
@@ -418,9 +418,9 @@ form.ea input:focus,form.ea select:focus{outline:2px solid var(--brand);outline-
   <div class="wrap">
     <div class="sec-head"><div class="eyebrow">Your data</div><h2>Your statements stay with you.</h2></div>
     <div class="trust">
-      <div><span class="ic"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7 17h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><div><h3>Analysed on your device</h3><p>The diagnostic runs in your browser. Your files are not uploaded to our servers.</p></div></div>
+      <div><span class="ic"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7 17h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><div><h3>Analysed on your device</h3><p>The diagnostic runs in your browser. Excel and CSV files never leave it.</p></div></div>
       <div><span class="ic"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 9V7a6 6 0 0112 0v2" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="9" width="14" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></span><div><h3>Nothing stored</h3><p>Close the tab and the figures are gone. There's no account and no database of your numbers.</p></div></div>
-      <div><span class="ic"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 5h12v8H9l-4 3v-3H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span><div><h3>Plop is opt-in</h3><p>Only when you ask Plop a question are summarised figures sent to Google Gemini to answer it. Our usage analytics never see your numbers.</p></div></div>
+      <div><span class="ic"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 5h12v8H9l-4 3v-3H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span><div><h3>AI only when you agree</h3><p>Reading a PDF, or asking Plop a question, sends text to Google Gemini. DriftLine asks first for PDFs, and stores nothing. Our usage analytics never see your numbers.</p></div></div>
     </div>
   </div>
 </section>
@@ -430,7 +430,7 @@ form.ea input:focus,form.ea select:focus{outline:2px solid var(--brand);outline-
   <div class="wrap">
     <div class="sec-head"><div class="eyebrow">FAQ</div><h2>Questions owners ask us.</h2></div>
     <div class="faq">
-      <details><summary>What format do my statements need to be in?</summary><p>One row per line item and one column per financial year, as an Excel sheet or CSV. Labels from Schedule III statements, US GAAP or plain English are recognised. You can also paste the numbers directly. Three or more years gives the most reliable picture.</p></details>
+      <details><summary>What format do my statements need to be in?</summary><p>Upload the company's results PDF or annual report, and DriftLine finds the full-year profit and loss statement and balance sheet in it. You check the numbers before relying on the report. Or use Excel or CSV with one row per line item and one column per financial year. Scanned PDFs can't be read yet. Three or more years gives the most reliable picture.</p></details>
       <details><summary>What does "gap to best year" mean?</summary><p>For each cost, we find the year it was lowest as a share of revenue. The gap is what you'd save today if it were back at that share. It's a ceiling, not a forecast, which is why you set how much of it you think is achievable.</p></details>
       <details><summary>Does this replace my CA?</summary><p>No. DriftLine shows where costs have drifted and what to check. Your CA or finance team brings the context: one-off items, contracts and decisions behind the numbers. Many firms use it to start that conversation.</p></details>
       <details><summary>Can I trust the numbers?</summary><p>The calculations are simple and shown on screen, so you can check any figure against your statements. The limits are in the data: annual statements can't separate price from volume, so every finding tells you which records would confirm it.</p></details>
@@ -445,7 +445,7 @@ form.ea input:focus,form.ea select:focus{outline:2px solid var(--brand);outline-
     <div class="final">
       <h2>See where your margin went.</h2>
       <p>Bring three years of statements. Leave with a ranked list of costs to look at, and what to check first.</p>
-      <div class="cta-row"><a class="btn primary lg" href="/app" data-track="cta_click" data-track-location="final" data-track-target="app">Run a free diagnostic</a><a class="btn lg" href="/app#sample" data-track="cta_click" data-track-location="final" data-track-target="sample">See a sample report</a></div>
+      <div class="cta-row"><a class="btn primary lg" href="/app" data-track="cta_click" data-track-location="final" data-track-target="app">Analyse your statements</a><a class="btn lg" href="/app#sample" data-track="cta_click" data-track-location="final" data-track-target="sample">See a sample report</a></div>
     </div>
   </div>
 </section>

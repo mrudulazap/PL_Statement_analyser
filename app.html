@@ -43,6 +43,15 @@ body{font-size:15px}
 .unit{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted);margin-left:auto}
 .unit input{width:84px;font:14px var(--f-body);padding:8px 10px;border:1px solid var(--line-strong);border-radius:8px;background:var(--bg);color:var(--ink)}
 .linkbtn{background:none;border:0;padding:0;color:var(--brand);font:500 14px var(--f-body);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.pdfask{margin-top:14px;border:1px solid var(--brand);background:var(--brand-soft);border-radius:12px;padding:16px 18px;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between}
+.pdfask p{font-size:14px;color:var(--muted);margin-top:4px;max-width:60ch}
+.pdfask .row{gap:8px}
+.pdfstate{margin-top:12px;font-size:14px;color:var(--brand);display:flex;align-items:center;gap:10px}
+.pdfstate::before{content:"";width:14px;height:14px;border-radius:50%;border:2px solid var(--brand);border-right-color:transparent;animation:spin .8s linear infinite;flex:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.review{margin-top:14px;border-radius:12px;padding:14px 16px;background:var(--warn-soft);color:var(--ink);font-size:14px;display:grid;grid-template-columns:20px minmax(0,1fr);gap:10px}
+.review svg{color:var(--warn);margin-top:2px}
+.review b{color:var(--warn)}
 details.raw{margin-top:14px}
 details.raw summary{cursor:pointer;color:var(--brand);font-weight:500;font-size:14px}
 .raws{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
@@ -139,7 +148,7 @@ td.num,th.num{text-align:right;white-space:nowrap}
 
 <div class="shell">
   <div class="page-head">
-    <div><h1>Cost diagnostic</h1><p>Upload three or more years of statements. Everything is analysed in your browser.</p></div>
+    <div><h1>Cost diagnostic</h1><p>Upload three or more years of statements. The analysis runs in your browser; PDFs are read with AI only if you agree.</p></div>
     <span class="status" id="exampleFlag">Showing the example company (fictional)</span>
   </div>
 
@@ -148,17 +157,17 @@ td.num,th.num{text-align:right;white-space:nowrap}
       <section class="card" aria-labelledby="upTitle">
         <div class="eyebrow">Step 1</div>
         <h2 id="upTitle">Add your statements</h2>
-        <p class="hint">One row per line item, one column per financial year. Excel or CSV (PDFs aren't supported yet). <button type="button" class="linkbtn" id="tplBtn">Download a template</button></p>
+        <p class="hint">A results PDF or annual report, or an Excel or CSV file with one column per financial year. <button type="button" class="linkbtn" id="tplBtn">Download a template</button></p>
         <div class="drops">
           <label class="drop" id="plDrop">
             <span class="ic"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5h7l4 4V17a.5.5 0 01-.5.5h-10A.5.5 0 015 17z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 11h5M8 14h5M8 8h2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
             <span><b>Profit &amp; loss</b><span id="plName">Drop a file here, or click to browse</span></span>
-            <input type="file" id="plFile" accept=".csv,.tsv,.txt,.xlsx,.xls" aria-label="Upload profit and loss file">
+            <input type="file" id="plFile" accept=".pdf,.csv,.tsv,.txt,.xlsx,.xls" aria-label="Upload profit and loss file">
           </label>
           <label class="drop" id="bsDrop">
             <span class="ic"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 16.5h14M5 13.5v-4M10 13.5v-8M15 13.5v-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
             <span><b>Balance sheet</b><span id="bsName">Optional. Adds working-capital cash.</span></span>
-            <input type="file" id="bsFile" accept=".csv,.tsv,.txt,.xlsx,.xls" aria-label="Upload balance sheet file">
+            <input type="file" id="bsFile" accept=".pdf,.csv,.tsv,.txt,.xlsx,.xls" aria-label="Upload balance sheet file">
           </label>
         </div>
         <div class="actions">
@@ -167,6 +176,12 @@ td.num,th.num{text-align:right;white-space:nowrap}
           <label class="unit" for="unitIn">Units <input id="unitIn" type="text" value="₹ Cr"></label>
         </div>
         <p class="err" id="errMsg" role="alert"></p>
+        <div class="pdfask" id="pdfAsk" hidden>
+          <div><b id="pdfAskTitle">Read this PDF with AI?</b><p>DriftLine will send the text of the statement pages, not the file itself, to Google Gemini to find the full-year P&amp;L and balance sheet. Nothing is stored. You check the numbers before relying on the report.</p></div>
+          <div class="row"><button class="btn primary sm" id="pdfYes" type="button">Read PDF</button><button class="btn sm" id="pdfNo" type="button">Cancel</button></div>
+        </div>
+        <div class="pdfstate" id="pdfState" role="status" hidden></div>
+        <div class="review" id="reviewNote" hidden><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 5v5M9 12.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><div id="reviewText"></div></div>
         <details class="raw" id="rawBox">
           <summary>Paste or edit the numbers</summary>
           <div class="raws">
@@ -582,7 +597,7 @@ function run(){
     window.dlTrack("diagnostic_run",{source:flag.classList.contains("own")?"own":"example",years:A.n,has_balance_sheet:A.WC?"yes":"no"}); if(flag.classList.contains("own")) window.dlTrack("own_diagnostic",{years:A.n}); }
   catch(e){ errEl.textContent=e.message; window.dlTrack("diagnostic_error",{reason:String(e.message).slice(0,90)}); }
 }
-function loadSample(){ ["plName","bsName"].forEach((id,i)=>{const n=document.getElementById(id);n.className="";n.textContent=i?"Optional. Adds working-capital cash.":"Drop a file here, or click to browse";}); plT.value=SAMPLE_PL; bsT.value=SAMPLE_BS; setStatus(false); document.getElementById("unitIn").value="₹ Cr"; run(); }
+function loadSample(){ if(typeof reviewNote!=="undefined"){reviewNote.hidden=true;pdfAsk.hidden=true;setPdfState("");} ["plName","bsName"].forEach((id,i)=>{const n=document.getElementById(id);n.className="";n.textContent=i?"Optional. Adds working-capital cash.":"Drop a file here, or click to browse";}); plT.value=SAMPLE_PL; bsT.value=SAMPLE_BS; setStatus(false); document.getElementById("unitIn").value="₹ Cr"; run(); }
 document.getElementById("runBtn").onclick=run;
 document.getElementById("sampleBtn").onclick=loadSample;
 [plT,bsT].forEach(t=>t.addEventListener("input",()=>{setStatus(true);}));
@@ -590,9 +605,7 @@ async function readFile(file,target){
   errEl.textContent="";
   const ext=(file.name.split(".").pop()||"").toLowerCase();
   if(!["csv","tsv","txt","xlsx","xls"].includes(ext)){
-    errEl.textContent=ext==="pdf"
-      ?"That's a PDF. DriftLine reads Excel or CSV files for now. Copy the P&L table into Excel with one column per year (or fill in the template), then upload that."
-      :"DriftLine reads Excel (.xlsx, .xls) or CSV files. Save your statement in one of those formats and try again.";
+    errEl.textContent="DriftLine reads PDF, Excel (.xlsx, .xls) or CSV files. Save your statement in one of those formats and try again.";
     window.dlTrack("diagnostic_error",{reason:"unsupported_file_"+ext.slice(0,5)});
     return false;
   }
@@ -607,6 +620,9 @@ async function readFile(file,target){
 }
 function setStatus(own){flag.textContent=own?"Showing your statements":"Showing the example company (fictional)";flag.classList.toggle("own",own);}
 async function takeFile(file,target,nameEl){ window.dlTrack("file_upload",{statement:target===plT?"pl":"bs",format:(file.name.split(".").pop()||"").toLowerCase().slice(0,5)});
+  reviewNote.hidden=true;
+  if(/\.pdf$/i.test(file.name)){ askPdf(file,target,nameEl); return; }
+  pdfAsk.hidden=true;
   const ok=await readFile(file,target);
   if(!ok){ nameEl.className=""; nameEl.textContent=target===plT?"Drop a file here, or click to browse":"Optional. Adds working-capital cash."; return; }
   nameEl.textContent=file.name; nameEl.className="file";
@@ -625,6 +641,82 @@ document.getElementById("tplBtn").onclick=()=>{
   const csv="Line item,FY22,FY23,FY24,FY25\nRevenue from operations,,,,\nOther income,,,,\nCost of materials consumed,,,,\nEmployee benefits expense,,,,\nPower and fuel,,,,\nFreight and forwarding,,,,\nRepairs and maintenance,,,,\nOther expenses,,,,\nDepreciation and amortisation,,,,\nFinance costs,,,,\n\nBalance sheet (put in a separate file),FY22,FY23,FY24,FY25\nInventories,,,,\nTrade receivables,,,,\nTrade payables,,,,\nBorrowings,,,,\n";
   const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"})); a.download="driftline-template.csv"; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
 };
+/* ===================== PDF import ===================== */
+const pdfAsk=document.getElementById("pdfAsk"), pdfState=document.getElementById("pdfState"), reviewNote=document.getElementById("reviewNote"), reviewText=document.getElementById("reviewText");
+const DEFAULT_LABEL={pl:"Drop a file here, or click to browse",bs:"Optional. Adds working-capital cash."};
+let pendingPdf=null;
+function askPdf(file,target,nameEl){
+  errEl.textContent=""; pendingPdf={file,target,nameEl};
+  nameEl.textContent=file.name+" · waiting for your OK"; nameEl.className="";
+  pdfAsk.hidden=false; document.getElementById("pdfYes").focus();
+}
+document.getElementById("pdfNo").onclick=()=>{
+  if(pendingPdf){ pendingPdf.nameEl.textContent=DEFAULT_LABEL[pendingPdf.target===plT?"pl":"bs"]; pendingPdf=null; }
+  pdfAsk.hidden=true; window.dlTrack("pdf_extract",{result:"declined"});
+};
+document.getElementById("pdfYes").onclick=()=>{ const p=pendingPdf; pendingPdf=null; pdfAsk.hidden=true; if(p) importPdf(p.file,p.target,p.nameEl); };
+function setPdfState(t){ pdfState.hidden=!t; pdfState.textContent=t||""; }
+let pdfLib=null;
+async function loadPdfJs(){
+  if(pdfLib) return pdfLib;
+  await new Promise((ok,bad)=>{const sc=document.createElement("script");sc.src="/assets/vendor/pdf.min.js";sc.onload=ok;sc.onerror=()=>bad(new Error("The PDF reader didn't load. Check your connection and try again."));document.head.appendChild(sc);});
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc="/assets/vendor/pdf.worker.min.js";
+  return (pdfLib=window.pdfjsLib);
+}
+async function pdfPages(file){
+  const lib=await loadPdfJs();
+  const doc=await lib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+  const N=Math.min(doc.numPages,500), pages=[];
+  for(let i=1;i<=N;i++){
+    if(i===1||i%5===0) setPdfState(`Reading page ${i} of ${N}…`);
+    const tc=await (await doc.getPage(i)).getTextContent();
+    const rows=new Map();
+    for(const it of tc.items){ const t=(it.str||"").trim(); if(!t) continue; const y=Math.round(it.transform[5]/3); if(!rows.has(y)) rows.set(y,[]); rows.get(y).push([it.transform[4],t]); }
+    pages.push([...rows.entries()].sort((a,b)=>b[0]-a[0]).map(([,r])=>r.sort((a,b)=>a[0]-b[0]).map(x=>x[1]).join(" | ")).join("\n"));
+  }
+  return pages;
+}
+// Send only the pages that look like financial statements, up to a size cap.
+function pickPages(pages,cap=88000){
+  const total=pages.reduce((s,p)=>s+p.length,0);
+  if(total<=cap) return pages.map((p,i)=>`[Page ${i+1}]\n${p}`).join("\n\n");
+  const KW=/profit and loss|statement of profit|revenue from operations|total income|expenses|balance sheet|assets and liabilities|inventories|trade receivables|trade payables|borrowings|employee benefit|finance costs|depreciation/gi;
+  const scored=pages.map((p,i)=>({i,p,s:(p.match(KW)||[]).length})).filter(x=>x.s>=3).sort((a,b)=>b.s-a.s);
+  const keep=[]; let used=0;
+  for(const x of scored){ if(used+x.p.length>cap) continue; keep.push(x); used+=x.p.length; }
+  return keep.sort((a,b)=>a.i-b.i).map(x=>`[Page ${x.i+1}]\n${x.p}`).join("\n\n");
+}
+async function importPdf(file,target,nameEl){
+  errEl.textContent=""; reviewNote.hidden=true; nameEl.textContent=file.name+" · reading…";
+  const fail=(msg,result)=>{ setPdfState(""); errEl.textContent=msg; nameEl.textContent=DEFAULT_LABEL[target===plT?"pl":"bs"]; nameEl.className=""; window.dlTrack("pdf_extract",{result}); };
+  let text;
+  try{
+    const pages=await pdfPages(file);
+    if(pages.join("").replace(/\s/g,"").length<200) return fail("This PDF has almost no readable text. It may be a scanned image, which DriftLine can't read yet. Try the company's digital results PDF, or copy the table into Excel.","scanned");
+    text=pickPages(pages);
+    if(!text) return fail("Couldn't find financial statement pages in this PDF.","no_statements");
+  }catch(e){ return fail(/password/i.test(e&&e.name||"")?"This PDF is password-protected. Remove the password and try again.":(e.message||"Couldn't open that PDF."),"open_failed"); }
+  setPdfState("Finding the full-year statements… this can take up to a minute.");
+  let r,j;
+  try{ r=await fetch("/api/extract",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text})}); j=await r.json().catch(()=>({})); }
+  catch(_){ return fail("Couldn't reach DriftLine's PDF reader. Check your connection and try again.","network"); }
+  if(!r.ok) return fail(j.error||"Couldn't read that PDF. Try again, or copy the table into Excel.",r.status===503?"off":r.status===422?"not_found":"failed");
+  setPdfState("");
+  if(!j.pl) return fail("Couldn't find a full-year profit and loss statement in this PDF.","not_found");
+  const replacePL=target===plT||!plT.value.trim()||plT.value===SAMPLE_PL;
+  if(replacePL) plT.value=j.pl;
+  const plName=document.getElementById("plName"), bsName=document.getElementById("bsName");
+  if(j.bs&&(target===bsT||!bsT.value.trim()||bsT.value===SAMPLE_BS)){ bsT.value=j.bs; bsName.textContent=(target===bsT?"":"From ")+file.name; bsName.className="file"; }
+  else if(!j.bs&&bsT.value===SAMPLE_BS){ bsT.value=""; }
+  if(replacePL){ plName.textContent=(target===plT?"":"From ")+file.name; plName.className="file"; }
+  if(j.unit) document.getElementById("unitIn").value=j.unit;
+  setStatus(true);
+  reviewText.innerHTML=`<b>Read from your PDF by AI.</b> ${esc(j.basis&&j.basis!=="Not stated"?j.basis+" figures":"Figures")}${j.unit?" in "+esc(j.unit):""}. Check them against the PDF before relying on the report: open “Paste or edit the numbers” below to see and correct them.${j.notes?" "+esc(j.notes):""}`;
+  reviewNote.hidden=false;
+  document.getElementById("rawBox").open=true;
+  run();
+  window.dlTrack("pdf_extract",{result:"ok",years:A?A.n:0,has_balance_sheet:j.bs?"yes":"no"});
+}
 /* ===================== Chat ===================== */
 const log=document.getElementById("chatLog"), chipsEl=document.getElementById("chatChips"), form=document.getElementById("chatForm"), inp=document.getElementById("chatIn"), sendB=document.getElementById("chatSend"), stopB=document.getElementById("chatStop"), note=document.getElementById("chatNote");
 let turns=[], liveOff=false, ctl=null;
