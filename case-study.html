@@ -63,12 +63,14 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
 .src{font-size:13.5px;color:var(--muted)}
 .src a{color:var(--muted)}
 </style>
+<script>window.__dlq=window.__dlq||[];window.dlTrack=function(n,p){window.__dlq.push([n,p])};</script>
+<script type="module" src="/assets/analytics.js"></script>
 </head>
 <body>
 <header class="nav">
   <div class="wrap">
     <a class="logo" href="/" aria-label="DriftLine home"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="var(--brand)"/><path d="M5.5 19.5h17" stroke="var(--on-brand)" stroke-opacity=".5" stroke-width="1.8" stroke-dasharray="2 2.4"/><path d="M5.5 19.5C11 19.5 13 15.5 16 13.5S20 9.5 22 8.5" fill="none" stroke="var(--on-brand)" stroke-width="2.2" stroke-linecap="round"/><circle cx="22" cy="8.5" r="2.7" fill="var(--drift)"/></svg>DriftLine</a>
-    <nav class="nav-links" aria-label="Main"><a class="hide-sm" href="/">Product</a><a class="btn primary sm" href="/app">Try the diagnostic</a></nav>
+    <nav class="nav-links" aria-label="Main"><a class="hide-sm" href="/">Product</a><a class="btn primary sm" href="/app" data-track="cta_click" data-track-location="case_study_nav" data-track-target="app">Try the diagnostic</a></nav>
   </div>
 </header>
 <main>
@@ -76,9 +78,9 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
   <div class="wrap">
     <div class="eyebrow">Case study</div>
     <h1>Building a cost diagnostic, and arguing against it first.</h1>
-    <p>DriftLine started as an idea: let a company upload its P&amp;L and get told where to save money. Before building it properly, I reviewed the idea the way a strategy partner would, sized the market for Indian MSMEs, and set a roadmap with clear points to stop.</p>
-    <div class="meta"><span><b>Role</b>Product, strategy and design</span><span><b>Built with</b>AI-assisted coding: JavaScript, Vercel Functions, Gemini</span><span><b>Status</b>Live diagnostic; paid plans in early access</span><span><b>By</b><a href="https://mrudula-portfolio-theta.vercel.app/" target="_blank" rel="noopener">Mrudula Kavuri ↗</a></span></div>
-    <nav class="toc" aria-label="Sections"><a href="#review">1. The critique</a><a href="#market">2. Market sizing</a><a href="#roadmap">3. Roadmap</a><a href="/app">Try the product ↗</a></nav>
+    <p>DriftLine started as an idea: let a company upload its P&amp;L and get told where to save money. Before building it properly, I reviewed the idea the way a strategy partner would, sized the market for Indian MSMEs, decided to make it free, and set a roadmap with clear points to stop.</p>
+    <div class="meta"><span><b>Role</b>Product, strategy and design</span><span><b>Built with</b>AI-assisted coding: JavaScript, Vercel Functions, Gemini</span><span><b>Status</b>Live, free for everyone</span><span><b>By</b><a href="https://mrudula-portfolio-theta.vercel.app/" target="_blank" rel="noopener">Mrudula Kavuri ↗</a></span></div>
+    <nav class="toc" aria-label="Sections"><a href="#review">1. The critique</a><a href="#market">2. Market sizing</a><a href="#roadmap">3. Roadmap</a><a href="/app" data-track="cta_click" data-track-location="case_study_toc" data-track-target="app">Try the product ↗</a></nav>
   </div>
 </section>
 
@@ -172,21 +174,19 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
 <section class="part" id="market"><div class="wrap"><div class="stack">
   <div>
     <div class="eyebrow">Market sizing · Indian MSMEs</div>
-    <h2>The real market is much smaller than "MSMEs in India".</h2>
-    <p class="lede">India has crores of registered MSMEs, but most are informal micro units with no balance sheet to analyse. The product needs several years of clean statements, and a cost gap large enough in rupees to be worth paying to find. That narrows the market fast.</p>
+    <h2>The real audience is much smaller than "MSMEs in India".</h2>
+    <p class="lede">India has crores of registered MSMEs, but most are informal micro units with no balance sheet to analyse. The product needs several years of clean statements, and a cost gap large enough in rupees to be worth paying to find. That narrows the audience to about 3.4 lakh firms.</p>
   </div>
   <div class="funnel">
     <div class="fstep"><i style="width:100%"></i><div><b>All Udyam and Udyam Assist registrations <span class="tagA f">Fact</span></b><span>Mostly informal micro units, June 2026</span></div><div class="v">8.84 crore</div></div>
     <div class="fstep"><i style="width:34%"></i><div><b>Small and medium enterprises <span class="tagA f">Fact</span></b><span>Turnover ₹10–500 Cr: about 4.91 lakh small and 37,000 medium</span></div><div class="v">≈5.3 lakh</div></div>
     <div class="fstep"><i style="width:22%"></i><div><b>With three or more years of clean statements <span class="tagA a">Assumption: 65%</span></b><span>Firms the diagnostic can actually work for</span></div><div class="v">≈3.4 lakh</div></div>
-    <div class="fstep"><i style="width:14%"></i><div><b>Serviceable market at Pro list price <span class="tagA a">Assumption</span></b><span>3.4 lakh firms × ₹19,999 a year</span></div><div class="v">≈₹690 Cr</div></div>
-    <div class="fstep"><i style="width:6%"></i><div><b>Obtainable in five years <span class="tagA a">Assumption: 1–2%</span></b><span>Normal to optimistic share for software sold to Indian SMEs</span></div><div class="v">₹7–14 Cr</div></div>
-  </div>
+    </div>
   <div class="qgrid">
-    <div class="qcard"><h3>Cross-check through CA firms</h3><p>India has about 99,000 CA firms. If 1,000 of them took the CA Partner plan at ₹9,999 a month, that's about ₹12 Cr a year. The two routes land in the same range, which gives the estimate some credibility, and suggests CA firms could be the faster channel.</p></div>
-    <div class="qcard"><h3>What would change the answer</h3><ul><li>If firms will only pay ₹10,000 a year, the serviceable market halves.</li><li>If lenders, who analyse MSME statements for every loan, are the better buyer, the market is fewer customers paying far more.</li><li>The first test is simple: ask owners what they paid last year for anything beyond Tally and their CA.</li></ul></div>
+    <div class="qcard"><h3>Why I made it free</h3><ul><li><strong>Adoption is the hard part.</strong> MSME owners rarely pay for software beyond Tally and their CA. A price would filter out the people the tool is for.</li><li><strong>It costs almost nothing to run.</strong> The analysis happens in the visitor's browser. Only Plop's answers use a paid AI service, and those have a fair-use limit.</li><li><strong>Usage is the evidence I need.</strong> Whether owners run it, upload real statements and come back says more than early sign-ups for a paid plan would.</li></ul></div>
+    <div class="qcard"><h3>If it ever needs to earn money</h3><ul><li><strong>CA firms:</strong> about 99,000 in India. A multi-client edition could be sold to the firms rather than charged to MSMEs.</li><li><strong>Lenders:</strong> banks and NBFCs analyse MSME statements for every loan. Fewer buyers, but each pays far more.</li><li><strong>The test first:</strong> ask owners and CAs what they pay today for anything beyond Tally and audit fees.</li></ul></div>
   </div>
-  <p class="src">Sources: MSME Ministry reply to Rajya Sabha via <a href="https://knnindia.co.in/news/newsdetails/msme/over-884-crore-msmes-registered-on-udyam-platforms-mos-karandlaje" target="_blank" rel="noopener">KNN India</a> (8.84 crore, June 2026); Udyam category counts via <a href="https://datarankindia.com/india-msme-statistics/" target="_blank" rel="noopener">DataRank India</a> (June 2026); CA firm count from <a href="https://taxconcept.net/icai/statistics-of-icai-members-students-firms-till-28th-february-2025/" target="_blank" rel="noopener">ICAI statistics</a> (Feb 2025). Counts are registrations, not confirmed active firms.</p>
+  <p class="src">Sources: MSME Ministry reply to Rajya Sabha via <a href="https://knnindia.co.in/news/newsdetails/msme/over-884-crore-msmes-registered-on-udyam-platforms-mos-karandlaje" target="_blank" rel="noopener">KNN India</a> (8.84 crore, June 2026); Udyam category counts via <a href="https://datarankindia.com/india-msme-statistics/" target="_blank" rel="noopener">DataRank India</a> (June 2026); CA firm count from <a href="https://taxconcept.net/icai/statistics-of-icai-members-students-firms-till-28th-february-2025/" target="_blank" rel="noopener">ICAI statistics</a> (Feb 2025). Counts are registrations, not confirmed active firms. The 65% share with clean statements is my assumption.</p>
 </div></div></section>
 
 <section class="part" id="roadmap"><div class="wrap">
@@ -204,7 +204,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
         <div class="phase-body">
           <div><h4>Build</h4><ul><li>This prototype, plus a manual "concierge" diagnostic run by a person for 10–15 companies</li><li>15–20 interviews: CFOs, MSME owners, CA partners</li></ul></div>
           <div><h4>Learn</h4><ul><li>Which buyer feels the pain most and will pay</li><li>Which insights led to an actual action within 30 days</li><li>Whether CA firms want it as a client-service tool</li></ul></div>
-          <div><h4>Pass / kill</h4><ul><li>Pass: ≥ 5 of 15 companies act on a finding and ≥ 3 say they would pay</li><li class="kill">Kill or pivot: reports are called "interesting" but nobody acts</li></ul></div>
+          <div><h4>Pass / kill</h4><ul><li>Pass: ≥ 5 of 15 companies act on a finding and ≥ 3 would recommend it to a peer or their CA</li><li class="kill">Kill or pivot: reports are called "interesting" but nobody acts</li></ul></div>
         </div>
       </div>
       <div class="phase">
@@ -212,8 +212,8 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
         <h3>Phase 1 · Statement diagnostic MVP</h3>
         <div class="phase-body">
           <div><h4>Build</h4><ul><li>PDF and Excel extraction for Schedule III and common formats, with a human review step</li><li>Line-item mapping, ratio engine, own-history sizing, chat grounded in the data</li><li>Security basics: encryption, deletion on request, no training on client data</li></ul></div>
-          <div><h4>Learn</h4><ul><li>Extraction accuracy on real statements</li><li>Time from upload to report</li><li>Conversion from free diagnostic to a sales call</li></ul></div>
-          <div><h4>Metrics</h4><ul><li>≥ 95% line-item mapping accuracy after review</li><li>Report in under 10 minutes</li><li>≥ 10% of free users request the deeper product</li></ul></div>
+          <div><h4>Learn</h4><ul><li>Extraction accuracy on real statements</li><li>Time from upload to report</li><li>Share of visitors who upload their own statements</li></ul></div>
+          <div><h4>Metrics</h4><ul><li>≥ 95% line-item mapping accuracy after review</li><li>Report in under 10 minutes</li><li>≥ 10% of visitors sign up for updates</li></ul></div>
         </div>
       </div>
       <div class="phase">
@@ -222,7 +222,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
         <div class="phase-body">
           <div><h4>Build</h4><ul><li>Peer benchmark set by industry and revenue band (MCA filings, licensed databases)</li><li>Connectors to accounting systems common with your buyers (Tally, Zoho Books, SAP B1)</li><li>Vendor spend cube: spend by vendor, category and month</li></ul></div>
           <div><h4>Learn</h4><ul><li>Whether peer gaps change recommendations versus own-history gaps</li><li>Which spend categories have the largest addressable gap</li></ul></div>
-          <div><h4>Metrics</h4><ul><li>Recommendations name a vendor or contract, not just a line item</li><li>Paid pilots with ≥ 10 companies</li></ul></div>
+          <div><h4>Metrics</h4><ul><li>Recommendations name a vendor or contract, not just a line item</li><li>Pilots with ≥ 10 companies using ledger data</li></ul></div>
         </div>
       </div>
       <div class="phase">
@@ -230,8 +230,8 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
         <h3>Phase 3 · From insight to realised savings</h3>
         <div class="phase-body">
           <div><h4>Build</h4><ul><li>Initiative tracker: owner, target, due date per saving</li><li>Monthly realised-savings measurement against baseline, adjusted for volume and price</li><li>Lever library by category; pricing and mix analysis on the revenue side</li><li>White-label edition for CA and advisory firms</li></ul></div>
-          <div><h4>Learn</h4><ul><li>Identified-to-realised savings conversion</li><li>Whether outcome-based pricing is viable</li></ul></div>
-          <div><h4>Metrics</h4><ul><li>≥ 40% of identified savings realised within 12 months</li><li>Net revenue retention above 100%</li></ul></div>
+          <div><h4>Learn</h4><ul><li>Identified-to-realised savings conversion</li><li>Whether CA firms or lenders would fund a free product for MSMEs</li></ul></div>
+          <div><h4>Metrics</h4><ul><li>≥ 40% of identified savings realised within 12 months</li><li>≥ 40% of companies come back within 6 months</li></ul></div>
         </div>
       </div>
       <div class="phase" style="padding-bottom:0">
@@ -255,6 +255,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
 <footer class="foot">
   <div class="wrap">
     <span>© 2026 DriftLine. Case study by Mrudula Kavuri.</span>
+    <span class="analytics-note" style="flex-basis:100%;font-size:13px">We use Google Analytics for Firebase to count visits and which features are used. It never receives your figures, files or questions.</span>
     <nav aria-label="Footer"><a href="/">Product</a><a href="/app">Diagnostic</a><a href="https://mrudula-portfolio-theta.vercel.app/" target="_blank" rel="noopener">Portfolio ↗</a></nav>
   </div>
 </footer>

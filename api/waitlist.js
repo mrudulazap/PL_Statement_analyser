@@ -1,4 +1,4 @@
-// Early-access sign-ups. Forwards each sign-up to WAITLIST_WEBHOOK_URL
+// "Get updates" sign-ups. Forwards each sign-up to WAITLIST_WEBHOOK_URL
 // (for example a Google Apps Script web app that appends a row to a Google Sheet).
 // See README for the five-minute setup.
 
@@ -16,7 +16,7 @@ function limited(ip) {
 
 const ROLES = ["Owner or promoter", "Finance head", "CA or advisor", "Other"];
 const SIZES = ["Under ₹10 Cr", "₹10–100 Cr", "₹100–500 Cr", "Over ₹500 Cr", "Not applicable"];
-const PLANS = ["Pro", "CA Partner", "Not sure yet"];
+const PLANS = ["Updates"];
 const pick = (v, list) => (list.includes(v) ? v : "Other");
 
 export default async function handler(req, res) {
@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Use POST." });
   }
   const hook = process.env.WAITLIST_WEBHOOK_URL;
-  if (!hook) return res.status(503).json({ error: "Early-access sign-ups open shortly. Please try again soon." });
+  if (!hook) return res.status(503).json({ error: "Sign-ups open shortly. Please try again soon." });
 
   const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "unknown";
   if (limited(ip)) return res.status(429).json({ error: "Too many attempts. Try again in a few minutes." });
@@ -43,7 +43,7 @@ export default async function handler(req, res) {
     name, email,
     role: pick(String(b.role || ""), ROLES),
     size: pick(String(b.size || ""), SIZES),
-    plan: pick(String(b.plan || ""), PLANS),
+    plan: PLANS.includes(String(b.plan)) ? String(b.plan) : "Updates",
     at: new Date().toISOString(),
   };
 

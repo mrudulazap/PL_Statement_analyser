@@ -1,6 +1,6 @@
 # DriftLine
 
-DriftLine is a cost diagnostic for Indian MSMEs. A company uploads its P&L and balance sheet, and DriftLine shows which cost lines have drifted against revenue, what bringing them back to their best year is worth, and how much cash is tied up in working capital. **Plop**, the built-in analyst, answers questions about the loaded figures using Google Gemini.
+DriftLine is a free cost diagnostic for Indian MSMEs. A company uploads its P&L and balance sheet, and DriftLine shows which cost lines have drifted against revenue, what bringing them back to their best year is worth, and how much cash is tied up in working capital. **Plop**, the built-in analyst, answers questions about the loaded figures using Google Gemini.
 
 Live: https://driftline-amber.vercel.app · Built by [Mrudula Kavuri](https://mrudula-portfolio-theta.vercel.app/)
 
@@ -8,7 +8,7 @@ Live: https://driftline-amber.vercel.app · Built by [Mrudula Kavuri](https://mr
 
 | URL | File | What it is |
 |---|---|---|
-| `/` | `index.html` | Product landing page: value, how it works, pricing, early-access sign-up, FAQ |
+| `/` | `index.html` | Landing page: value, how it works, free for everyone, what's next with an updates sign-up, FAQ |
 | `/app` | `app.html` | The free diagnostic. Analysis runs entirely in the browser |
 | `/case-study` | `case-study.html` | Partner-style critique, MSME market sizing and 18-month roadmap |
 
@@ -17,7 +17,9 @@ Server functions:
 | File | What it does |
 |---|---|
 | `api/plop.js` | Plop chat. Holds Plop's instructions and calls Gemini with your key |
-| `api/waitlist.js` | Early-access form. Forwards each sign-up to a webhook, such as a Google Sheet |
+| `api/waitlist.js` | "Get updates" form. Forwards each sign-up to a webhook, such as a Google Sheet |
+
+Analytics: `assets/analytics.js` loads Google Analytics for Firebase using `assets/firebase-config.js`.
 
 Fonts are self-hosted in `assets/fonts` (Bricolage Grotesque and IBM Plex, both under the SIL Open Font License).
 
@@ -27,7 +29,7 @@ Fonts are self-hosted in `assets/fonts` (Bricolage Grotesque and IBM Plex, both 
 |---|---|---|
 | `GEMINI_API_KEY` | Plop's live answers | From Google AI Studio. Without it, Plop gives basic lookups |
 | `GEMINI_MODEL` | Optional | Defaults to `gemini-2.5-flash` |
-| `WAITLIST_WEBHOOK_URL` | Early-access sign-ups | Without it, the form tells visitors sign-ups open shortly |
+| `WAITLIST_WEBHOOK_URL` | "Get updates" sign-ups | Without it, the form tells visitors sign-ups open shortly |
 
 Redeploy after adding or changing a variable.
 
@@ -47,6 +49,34 @@ function doPost(e) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 ```
+
+## Analytics (Google Analytics for Firebase)
+
+1. In the [Firebase console](https://console.firebase.google.com/), create a project (or open an existing one) and turn on **Google Analytics** for it.
+2. Go to **Project settings → General → Your apps**, add a **Web app**, and copy the `firebaseConfig` values.
+3. Paste them into `assets/firebase-config.js`. The `measurementId` starts with `G-`.
+4. Commit and push. Vercel redeploys, and events appear under **Analytics → Realtime** within a minute, and in reports within a day.
+
+While `measurementId` is empty, analytics stays off and nothing is sent. The web config is not a secret, so it's fine in a public repo.
+
+Events recorded (besides automatic page views):
+
+| Event | When | Parameters |
+|---|---|---|
+| `cta_click` | A tracked button is clicked | `location`, `target` |
+| `diagnostic_run` | A report is produced | `source` (example or own), `years`, `has_balance_sheet` |
+| `own_diagnostic` | A report is produced from the visitor's own statements | `years` |
+| `diagnostic_error` | Statements can't be read | `reason` (DriftLine's own error message) |
+| `file_upload` | A statement file is added | `statement` (pl or bs), `format` |
+| `template_download` | Template downloaded | none |
+| `plop_question` | A question is asked | `suggested` (yes or no) |
+| `capture_change` | Capture slider moved | `percent` |
+| `faq_open` | An FAQ is opened | `question` (number) |
+| `updates_signup` | Updates form submitted | `role`, `company_size` |
+
+No event carries financial figures, file names or contents, line-item names, chat text, names or email addresses.
+
+`own_diagnostic` fires only when someone runs the report on their own statements (`years`). Mark it as a **key event** in Firebase (Admin → Events) to track it as DriftLine's main conversion.
 
 ## Cost controls
 
@@ -68,4 +98,4 @@ Employee benefits expense,74,80,88,97
 - Savings are sized against the company's own best year, not peers.
 - Annual statements cannot separate price, volume and mix, so every insight lists the data needed to confirm it.
 - Working-capital days use year-end balances, not averages.
-- Pro and CA Partner features are in early access and not built yet; the site marks them as coming soon.
+- Features under "What's next" are planned, not built; the site says so.

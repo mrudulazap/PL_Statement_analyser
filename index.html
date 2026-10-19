@@ -128,27 +128,20 @@ section.block{padding-block:88px 0}
 .aud .use{margin-top:14px;font-size:14px;color:var(--ink);background:var(--bg);border-radius:8px;padding:10px 12px}
 .aud.ca{border-top-color:var(--drift)}
 
-/* pricing */
-.plans{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;align-items:stretch}
-@media (max-width:960px){.plans{grid-template-columns:minmax(0,1fr);max-width:520px}}
-.plan{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:28px;display:flex;flex-direction:column;gap:18px;position:relative}
-.plan.featured{border:2px solid var(--brand);box-shadow:var(--shadow)}
-.plan .badge{position:absolute;top:-12px;left:28px;font:500 11px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;background:var(--brand);color:var(--on-brand);padding:6px 10px;border-radius:5px}
-.plan h3{font-size:22px}
-.plan .for{color:var(--muted);font-size:15px;margin-top:4px}
-.price{font:800 40px/1 var(--f-display);letter-spacing:-.03em}
-.price small{font:400 15px var(--f-body);color:var(--muted);letter-spacing:0}
-.price-note{font-size:13.5px;color:var(--muted);margin-top:6px}
-.plan ul{list-style:none;margin:0;padding:0;display:grid;gap:10px;font-size:15px}
-.plan li{display:grid;grid-template-columns:20px 1fr;gap:8px}
-.plan li svg{margin-top:4px;color:var(--brand)}
-.plan li.soon{color:var(--muted)}
-.plan li.soon svg{color:var(--line-strong)}
-.soon-chip{font:500 10.5px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--warn);background:var(--warn-soft);padding:2px 6px;border-radius:4px;margin-left:6px;white-space:nowrap}
-.plan .btn{margin-top:auto;width:100%}
-.fine{color:var(--muted);font-size:14px;margin-top:20px;max-width:760px}
+/* free + updates */
+.freeband{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:48px;align-items:center}
+@media (max-width:860px){.freeband{grid-template-columns:minmax(0,1fr);gap:28px}}
+.freeband .big{font:800 clamp(56px,8vw,96px)/1 var(--f-display);letter-spacing:-.04em;color:var(--brand)}
+.freeband .copy p{color:var(--muted);font-size:17px;margin-top:14px}
+.freelist{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.freelist li{display:grid;grid-template-columns:22px minmax(0,1fr);gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;font-size:15.5px}
+.freelist li svg{margin-top:3px;color:var(--brand)}
+.freelist b{display:block}
+.freelist span span{color:var(--muted)}
+.nextlist{list-style:none;margin:18px 0 0;padding:0;display:grid;gap:10px}
+.nextlist li{display:flex;gap:10px;align-items:baseline;font-size:15.5px}
+.nextlist li::before{content:"";width:8px;height:8px;border-radius:50%;border:2px solid var(--brand);flex:none;transform:translateY(-1px)}
 
-/* early access */
 .early{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:48px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:44px}
 @media (max-width:860px){.early{grid-template-columns:minmax(0,1fr);padding:28px 22px;gap:24px}}
 .early h2{font-size:clamp(28px,3vw,36px);font-weight:800;line-height:1.1}
@@ -186,6 +179,8 @@ form.ea input:focus,form.ea select:focus{outline:2px solid var(--brand);outline-
 .final p{color:var(--muted);font-size:18px;margin:14px auto 26px;max-width:36em}
 .final .cta-row{justify-content:center}
 </style>
+<script>window.__dlq=window.__dlq||[];window.dlTrack=function(n,p){window.__dlq.push([n,p])};</script>
+<script type="module" src="/assets/analytics.js"></script>
 </head>
 <body>
 
@@ -197,9 +192,9 @@ form.ea input:focus,form.ea select:focus{outline:2px solid var(--brand);outline-
     </a>
     <nav class="nav-links" aria-label="Main">
       <a class="hide-sm" href="#how">How it works</a>
-      <a class="hide-sm" href="#pricing">Pricing</a>
+      <a class="hide-sm" href="#next">What's next</a>
       <a class="hide-sm" href="#faq">FAQ</a>
-      <a class="btn primary sm" href="/app">Try it free</a>
+      <a class="btn primary sm" href="/app" data-track="cta_click" data-track-location="nav" data-track-target="app">Try it free</a>
     </nav>
   </div>
 </header>
@@ -213,11 +208,11 @@ form.ea input:focus,form.ea select:focus{outline:2px solid var(--brand);outline-
       <h1>Find the costs that <em>crept up</em> while revenue grew.</h1>
       <p class="lede">Upload your P&amp;L and balance sheet. DriftLine shows which cost lines have drifted against revenue, what bringing them back is worth, and how much cash is stuck in stock and unpaid invoices.</p>
       <div class="cta-row">
-        <a class="btn primary lg" href="/app">Run a free diagnostic</a>
-        <a class="btn lg" href="/app#sample">See a sample report</a>
+        <a class="btn primary lg" href="/app" data-track="cta_click" data-track-location="hero" data-track-target="app">Run a free diagnostic</a>
+        <a class="btn lg" href="/app#sample" data-track="cta_click" data-track-location="hero" data-track-target="sample">See a sample report</a>
       </div>
       <ul class="checks">
-        <li><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>No sign-up</li>
+        <li><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Free, no sign-up</li>
         <li><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Excel or CSV, Schedule III labels</li>
         <li><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Analysed on your device</li>
       </ul>
@@ -345,7 +340,7 @@ form.ea input:focus,form.ea select:focus{outline:2px solid var(--brand);outline-
         <li><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 5v5M9 12.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span><b>Price versus volume.</b> A rising material cost could be commodity prices, product mix or waste. We list the records that separate them.</span></li>
         <li><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 5v5M9 12.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span><b>Vendors and contracts.</b> Statements show totals, not suppliers. Renegotiation needs your purchase data.</span></li>
         <li><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 5v5M9 12.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span><b>Costs you shouldn't cut.</b> Marketing, maintenance and people come with a warning, because cutting them can cost next year's revenue.</span></li>
-        <li><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 5v5M9 12.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span><b>Your peers.</b> Today we compare you with your own best year. Industry benchmarks are on the way for Pro.</span></li>
+        <li><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 5v5M9 12.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span><b>Your peers.</b> Today we compare you with your own best year. Industry benchmarks are on our roadmap.</span></li>
       </ul>
     </div>
   </div>
@@ -361,83 +356,58 @@ form.ea input:focus,form.ea select:focus{outline:2px solid var(--brand);outline-
     <div class="audience">
       <div class="aud"><h3>Owners and promoters</h3><p>You know the business, but rarely see costs laid out against revenue year after year.</p><div class="use">Use it before your annual budget, or when margins slip and nobody can say why.</div></div>
       <div class="aud"><h3>Finance heads</h3><p>Skip the spreadsheet work and get a ranked view of where margin went, ready to take to the board.</p><div class="use">Use it to prioritise a cost review and decide which data to pull first.</div></div>
-      <div class="aud ca"><h3>CA and advisory firms</h3><p>Offer every client a structured cost review alongside the audit, without extra analyst hours.</p><div class="use">The CA Partner plan adds multiple clients and reports with your firm's name.</div></div>
+      <div class="aud ca"><h3>CA and advisory firms</h3><p>Offer every client a structured cost review alongside the audit, without extra analyst hours.</p><div class="use">Run it for every client at no cost, and bring the findings to your next review meeting.</div></div>
     </div>
   </div>
 </section>
 
-<!-- PRICING -->
-<section class="block" id="pricing">
-  <div class="wrap">
-    <div class="sec-head">
-      <div class="eyebrow">Pricing</div>
-      <h2>Free to diagnose. Pay when you want to track.</h2>
-      <p>The diagnostic is free and stays free. Pro and CA Partner are in early access while we build them with our first users.</p>
+<!-- FREE -->
+<section class="block" id="free">
+  <div class="wrap freeband">
+    <div class="copy">
+      <div class="eyebrow">Free for everyone</div>
+      <div class="big num" style="margin-top:12px">₹0</div>
+      <h2 style="font-size:clamp(28px,3.2vw,40px);font-weight:800;line-height:1.1;margin-top:14px">No plans, no trial, no catch.</h2>
+      <p>DriftLine is free for every business, every CA firm and every finance team. Run it as often as you like, on as many companies as you like.</p>
     </div>
-    <div class="plans">
-      <div class="plan">
-        <div><h3>Diagnostic</h3><p class="for">For a one-off look at your cost base</p></div>
-        <div><div class="price num">₹0</div><div class="price-note">Free, no sign-up</div></div>
-        <ul>
-          <li><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Cost drift report for any company</li>
-          <li><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Working-capital cash and interest</li>
-          <li><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Next steps for every finding</li>
-          <li><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Questions to Plop, within a fair-use limit</li>
-        </ul>
-        <a class="btn" href="/app">Run a free diagnostic</a>
-      </div>
-      <div class="plan featured">
-        <span class="badge">Early access</span>
-        <div><h3>Pro</h3><p class="for">For companies that want to track costs every month</p></div>
-        <div><div class="price num">₹19,999<small> / year</small></div><div class="price-note">Per company, or ₹1,999 a month. Excludes GST.</div></div>
-        <ul>
-          <li><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Everything in Diagnostic</li>
-          <li class="soon"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Monthly tracking from Tally and Zoho Books<span class="soon-chip">Soon</span></span></li>
-          <li class="soon"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Industry peer benchmarks<span class="soon-chip">Soon</span></span></li>
-          <li class="soon"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Saved reports and year-on-year comparison<span class="soon-chip">Soon</span></span></li>
-          <li class="soon"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>PDF report for your bank or board<span class="soon-chip">Soon</span></span></li>
-        </ul>
-        <a class="btn primary" href="#early-access" data-plan="Pro">Join early access</a>
-      </div>
-      <div class="plan">
-        <div><h3>CA Partner</h3><p class="for">For firms advising many MSME clients</p></div>
-        <div><div class="price num">₹9,999<small> / month</small></div><div class="price-note">Up to 25 client companies. Excludes GST.</div></div>
-        <ul>
-          <li><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Everything in Pro, for each client</li>
-          <li class="soon"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Reports carrying your firm's name<span class="soon-chip">Soon</span></span></li>
-          <li class="soon"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>One dashboard across all clients<span class="soon-chip">Soon</span></span></li>
-          <li class="soon"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Priority support and onboarding<span class="soon-chip">Soon</span></span></li>
-        </ul>
-        <a class="btn" href="#early-access" data-plan="CA Partner">Join early access</a>
-      </div>
-    </div>
-    <p class="fine">Early-access members get launch pricing locked for the first year. We'll contact you before anything is charged.</p>
+    <ul class="freelist">
+      <li><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>The full report</b><span>Cost drift for every line, working-capital cash, and next steps for each finding.</span></span></li>
+      <li><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Plop, your analyst</b><span>Ask questions about your numbers, within a fair-use limit.</span></span></li>
+      <li><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>No account needed</b><span>Open the page and upload. Nothing to sign up for, nothing to cancel.</span></span></li>
+      <li><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Why it can be free</b><span>The analysis runs in your browser, not on our servers, so each report costs almost nothing to produce.</span></span></li>
+    </ul>
   </div>
 </section>
 
-<!-- EARLY ACCESS -->
-<section class="block" id="early-access">
+<!-- NEXT + UPDATES -->
+<section class="block" id="next">
   <div class="wrap">
     <div class="early">
       <div class="copy">
-        <div class="eyebrow">Early access</div>
-        <h2 style="margin-top:10px">Help shape Pro and CA Partner.</h2>
-        <p>We're building monthly tracking, benchmarks and multi-client reports with a small group of companies and CA firms. Join and we'll get in touch.</p>
-        <p>No payment now. We'll only use your email for DriftLine.</p>
+        <div class="eyebrow">What's next</div>
+        <h2 style="margin-top:10px">Where DriftLine is heading.</h2>
+        <p>These are planned, not built yet. Tell us who you are and we'll let you know as they arrive.</p>
+        <ul class="nextlist">
+          <li>Import straight from Tally and Zoho Books</li>
+          <li>Compare your costs with similar companies in your industry</li>
+          <li>Save reports and track them year on year</li>
+          <li>A PDF report for your bank or board</li>
+          <li>One view across all clients, for CA firms</li>
+        </ul>
       </div>
       <form class="ea" id="eaForm" novalidate>
         <div><label for="eaName">Name</label><input id="eaName" name="name" autocomplete="name" required></div>
-        <div><label for="eaEmail">Work email</label><input id="eaEmail" name="email" type="email" autocomplete="email" required></div>
+        <div><label for="eaEmail">Email</label><input id="eaEmail" name="email" type="email" autocomplete="email" required></div>
         <div><label for="eaRole">You are</label>
           <select id="eaRole" name="role"><option>Owner or promoter</option><option>Finance head</option><option>CA or advisor</option><option>Other</option></select></div>
         <div><label for="eaSize">Company revenue</label>
           <select id="eaSize" name="size"><option>Under ₹10 Cr</option><option selected>₹10–100 Cr</option><option>₹100–500 Cr</option><option>Over ₹500 Cr</option><option>Not applicable</option></select></div>
-        <div class="full"><label for="eaPlan">Interested in</label>
-          <select id="eaPlan" name="plan"><option>Pro</option><option>CA Partner</option><option>Not sure yet</option></select></div>
+        <input type="hidden" name="plan" value="Updates">
         <div class="full" style="display:flex;flex-wrap:wrap;align-items:center;gap:14px">
-          <button class="btn primary" type="submit" id="eaBtn">Request early access</button>
+          <button class="btn primary" type="submit" id="eaBtn">Get updates</button>
           <span class="form-msg" id="eaMsg" role="status"></span>
         </div>
+        <p class="full" style="font-size:13.5px;color:var(--muted)">We'll only email you about DriftLine. No spam, and you can ask us to remove you anytime.</p>
       </form>
     </div>
   </div>
@@ -450,7 +420,7 @@ form.ea input:focus,form.ea select:focus{outline:2px solid var(--brand);outline-
     <div class="trust">
       <div><span class="ic"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7 17h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><div><h3>Analysed on your device</h3><p>The diagnostic runs in your browser. Your files are not uploaded to our servers.</p></div></div>
       <div><span class="ic"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 9V7a6 6 0 0112 0v2" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="9" width="14" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></span><div><h3>Nothing stored</h3><p>Close the tab and the figures are gone. There's no account and no database of your numbers.</p></div></div>
-      <div><span class="ic"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 5h12v8H9l-4 3v-3H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span><div><h3>Plop is opt-in</h3><p>Only when you ask Plop a question are summarised figures sent to Google Gemini to answer it.</p></div></div>
+      <div><span class="ic"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 5h12v8H9l-4 3v-3H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span><div><h3>Plop is opt-in</h3><p>Only when you ask Plop a question are summarised figures sent to Google Gemini to answer it. Our usage analytics never see your numbers.</p></div></div>
     </div>
   </div>
 </section>
@@ -464,7 +434,7 @@ form.ea input:focus,form.ea select:focus{outline:2px solid var(--brand);outline-
       <details><summary>What does "gap to best year" mean?</summary><p>For each cost, we find the year it was lowest as a share of revenue. The gap is what you'd save today if it were back at that share. It's a ceiling, not a forecast, which is why you set how much of it you think is achievable.</p></details>
       <details><summary>Does this replace my CA?</summary><p>No. DriftLine shows where costs have drifted and what to check. Your CA or finance team brings the context: one-off items, contracts and decisions behind the numbers. Many firms use it to start that conversation.</p></details>
       <details><summary>Can I trust the numbers?</summary><p>The calculations are simple and shown on screen, so you can check any figure against your statements. The limits are in the data: annual statements can't separate price from volume, so every finding tells you which records would confirm it.</p></details>
-      <details><summary>When will Pro be available?</summary><p>Pro and CA Partner are in early access. Join the list and we'll contact you as features open, with launch pricing locked for your first year.</p></details>
+      <details><summary>Is it really free?</summary><p>Yes, for every business. There's no trial, no sign-up and no card. The analysis runs in your own browser, so it costs very little to run. Plop has a fair-use limit so it stays free for everyone.</p></details>
     </div>
   </div>
 </section>
@@ -475,7 +445,7 @@ form.ea input:focus,form.ea select:focus{outline:2px solid var(--brand);outline-
     <div class="final">
       <h2>See where your margin went.</h2>
       <p>Bring three years of statements. Leave with a ranked list of costs to look at, and what to check first.</p>
-      <div class="cta-row"><a class="btn primary lg" href="/app">Run a free diagnostic</a><a class="btn lg" href="/app#sample">See a sample report</a></div>
+      <div class="cta-row"><a class="btn primary lg" href="/app" data-track="cta_click" data-track-location="final" data-track-target="app">Run a free diagnostic</a><a class="btn lg" href="/app#sample" data-track="cta_click" data-track-location="final" data-track-target="sample">See a sample report</a></div>
     </div>
   </div>
 </section>
@@ -484,13 +454,13 @@ form.ea input:focus,form.ea select:focus{outline:2px solid var(--brand);outline-
 <footer class="foot">
   <div class="wrap">
     <a class="logo" href="/" style="font-size:17px"><svg width="22" height="22" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="var(--brand)"/><path d="M5.5 19.5C11 19.5 13 15.5 16 13.5S20 9.5 22 8.5" fill="none" stroke="var(--on-brand)" stroke-width="2.4" stroke-linecap="round"/><circle cx="22" cy="8.5" r="2.7" fill="var(--drift)"/></svg>DriftLine</a>
-    <nav aria-label="Footer"><a href="/app">Diagnostic</a><a href="#pricing">Pricing</a><a href="/case-study">Case study</a><a href="https://mrudula-portfolio-theta.vercel.app/" target="_blank" rel="noopener">Built by Mrudula Kavuri ↗</a></nav>
+    <nav aria-label="Footer"><a href="/app">Diagnostic</a><a href="#next">What's next</a><a href="/case-study">Case study</a><a href="https://mrudula-portfolio-theta.vercel.app/" target="_blank" rel="noopener">Built by Mrudula Kavuri ↗</a></nav>
     <span>© 2026 DriftLine. Not financial advice.</span>
+    <span class="analytics-note" style="flex-basis:100%;font-size:13px">We use Google Analytics for Firebase to count visits and which features are used. It never receives your figures, files or questions.</span>
   </div>
 </footer>
 
 <script>
-document.querySelectorAll('[data-plan]').forEach(a=>a.addEventListener('click',()=>{const s=document.getElementById('eaPlan');s.value=a.dataset.plan;}));
 const f=document.getElementById('eaForm'), msg=document.getElementById('eaMsg'), btn=document.getElementById('eaBtn');
 f.addEventListener('submit',async e=>{
   e.preventDefault(); msg.className='form-msg'; msg.textContent='';
@@ -500,11 +470,12 @@ f.addEventListener('submit',async e=>{
   btn.disabled=true; btn.textContent='Sending…';
   try{
     const r=await fetch('/api/waitlist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
-    if(r.ok){f.reset();msg.className='form-msg ok';msg.textContent="You're on the list. We'll be in touch.";}
+    if(r.ok){window.dlTrack('updates_signup',{role:d.role,company_size:d.size});f.reset();msg.className='form-msg ok';msg.textContent="Thanks. We'll email you when new features arrive.";}
     else{const j=await r.json().catch(()=>({}));msg.className='form-msg err';msg.textContent=j.error||'Something went wrong. Try again in a minute.';}
   }catch(_){msg.className='form-msg err';msg.textContent="Couldn't reach the server. Check your connection and try again.";}
-  btn.disabled=false; btn.textContent='Request early access';
+  btn.disabled=false; btn.textContent='Get updates';
 });
+document.querySelectorAll('.faq details').forEach((el,i)=>el.addEventListener('toggle',()=>{if(el.open)window.dlTrack('faq_open',{question:i+1});}));
 </script>
 </body>
 </html>

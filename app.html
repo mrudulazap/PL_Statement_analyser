@@ -119,6 +119,8 @@ td.num,th.num{text-align:right;white-space:nowrap}
 .chat input[type=text]{flex:1;min-width:0;font:14.5px var(--f-body);padding:10px 12px;border:1px solid var(--line-strong);border-radius:9px;background:var(--bg);color:var(--ink)}
 .chat-note{font-size:12px;color:var(--muted);padding:0 18px 10px}
 </style>
+<script>window.__dlq=window.__dlq||[];window.dlTrack=function(n,p){window.__dlq.push([n,p])};</script>
+<script type="module" src="/assets/analytics.js"></script>
 </head>
 <body>
 <header class="nav appbar">
@@ -129,8 +131,8 @@ td.num,th.num{text-align:right;white-space:nowrap}
     </a>
     <span class="crumb">Diagnostic</span>
     <nav class="nav-links" aria-label="Main">
-      <a class="hide-sm" href="/#pricing">Pricing</a>
-      <a class="btn primary sm" href="/#early-access">Get Pro early access</a>
+      <a class="hide-sm" href="/#how">How it works</a>
+      <a class="hide-sm" href="/#faq">FAQ</a>
     </nav>
   </div>
 </header>
@@ -177,8 +179,8 @@ td.num,th.num{text-align:right;white-space:nowrap}
       <div id="results" class="stack"></div>
 
       <aside class="upsell">
-        <div><h3>Want this every month?</h3><p>DriftLine Pro will track costs from Tally and Zoho Books, compare you with your industry, and produce a report for your bank or board.</p></div>
-        <a class="btn primary" href="/#early-access">Join early access</a>
+        <div><h3>Free for everyone, and getting better</h3><p>Next up: importing straight from Tally and Zoho Books, industry comparisons, and a PDF report for your bank or board.</p></div>
+        <a class="btn" href="/#next" data-track="cta_click" data-track-location="app_footer" data-track-target="updates">Get updates</a>
       </aside>
     </div>
 
@@ -199,7 +201,8 @@ td.num,th.num{text-align:right;white-space:nowrap}
 <footer class="foot" style="margin-top:0">
   <div class="wrap" style="max-width:1360px">
     <span>© 2026 DriftLine. Not financial advice.</span>
-    <nav aria-label="Footer"><a href="/">Home</a><a href="/#pricing">Pricing</a><a href="/case-study">Case study</a><a href="https://mrudula-portfolio-theta.vercel.app/" target="_blank" rel="noopener">Built by Mrudula Kavuri ↗</a></nav>
+    <span class="analytics-note" style="flex-basis:100%;font-size:13px">We use Google Analytics for Firebase to count visits and which features are used. It never receives your figures, files or questions.</span>
+    <nav aria-label="Footer"><a href="/">Home</a><a href="/#next">What's next</a><a href="/case-study">Case study</a><a href="https://mrudula-portfolio-theta.vercel.app/" target="_blank" rel="noopener">Built by Mrudula Kavuri ↗</a></nav>
   </div>
 </footer>
 
@@ -549,7 +552,8 @@ function render(){
     <li>Revenue-side levers such as pricing, discounts and customer profitability, which are often larger than cost savings.</li></ul></div>`;
   R.innerHTML=h;
   const capIn=document.getElementById("capIn");
-  capIn.addEventListener("input",()=>{CAPTURE=+capIn.value;render();document.getElementById("capIn").focus();});
+  capIn.addEventListener("input",()=>{CAPTURE=+capIn.value;render();const c=document.getElementById("capIn");c.focus();c.addEventListener("change",()=>window.dlTrack("capture_change",{percent:CAPTURE}),{once:true});});
+  capIn.addEventListener("change",()=>window.dlTrack("capture_change",{percent:CAPTURE}),{once:true});
 }
 function headline(A,eM,ops,totalGap){
   const d=eM[A.L]-eM[0];
@@ -563,8 +567,9 @@ function headline(A,eM,ops,totalGap){
 const plT=document.getElementById("plText"), bsT=document.getElementById("bsText"), errEl=document.getElementById("errMsg"), flag=document.getElementById("exampleFlag");
 function run(){
   errEl.textContent=""; UNIT=document.getElementById("unitIn").value.trim()||"units";
-  try{ A=analyse(plT.value,bsT.value); render(); resetChat(); }
-  catch(e){ errEl.textContent=e.message; }
+  try{ A=analyse(plT.value,bsT.value); render(); resetChat();
+    window.dlTrack("diagnostic_run",{source:flag.classList.contains("own")?"own":"example",years:A.n,has_balance_sheet:A.WC?"yes":"no"}); if(flag.classList.contains("own")) window.dlTrack("own_diagnostic",{years:A.n}); }
+  catch(e){ errEl.textContent=e.message; window.dlTrack("diagnostic_error",{reason:String(e.message).slice(0,90)}); }
 }
 function loadSample(){ ["plName","bsName"].forEach((id,i)=>{const n=document.getElementById(id);n.className="";n.textContent=i?"Optional. Adds working-capital cash.":"Drop a file here, or click to browse";}); plT.value=SAMPLE_PL; bsT.value=SAMPLE_BS; setStatus(false); document.getElementById("unitIn").value="₹ Cr"; run(); }
 document.getElementById("runBtn").onclick=run;
@@ -582,7 +587,11 @@ async function readFile(file,target){
   }catch(e){ errEl.textContent=e.message||"Could not read that file."; }
 }
 function setStatus(own){flag.textContent=own?"Showing your statements":"Showing the example company (fictional)";flag.classList.toggle("own",own);}
-async function takeFile(file,target,nameEl){ nameEl.textContent=file.name; nameEl.className="file"; await readFile(file,target); if(plT.value.trim()) run(); }
+async function takeFile(file,target,nameEl){ window.dlTrack("file_upload",{statement:target===plT?"pl":"bs",format:(file.name.split(".").pop()||"").toLowerCase().slice(0,5)}); nameEl.textContent=file.name; nameEl.className="file";
+  if(target===plT&&bsT.value===SAMPLE_BS) bsT.value="";   // never mix the user's P&L with the example balance sheet
+  if(target===bsT&&plT.value===SAMPLE_PL) plT.value="";
+  await readFile(file,target);
+  if(plT.value.trim()) run(); else { errEl.textContent="Balance sheet added. Now add your P&L to run the diagnostic."; } }
 [["plFile","plDrop","plName",plT],["bsFile","bsDrop","bsName",bsT]].forEach(([fid,did,nid,t])=>{
   const inp=document.getElementById(fid), drop=document.getElementById(did), nm=document.getElementById(nid);
   inp.onchange=e=>{ if(e.target.files[0]) takeFile(e.target.files[0],t,nm); };
@@ -591,6 +600,7 @@ async function takeFile(file,target,nameEl){ nameEl.textContent=file.name; nameE
   drop.addEventListener("drop",e=>{const f=e.dataTransfer&&e.dataTransfer.files[0]; if(f) takeFile(f,t,nm);});
 });
 document.getElementById("tplBtn").onclick=()=>{
+  window.dlTrack("template_download");
   const csv="Line item,FY22,FY23,FY24,FY25\nRevenue from operations,,,,\nOther income,,,,\nCost of materials consumed,,,,\nEmployee benefits expense,,,,\nPower and fuel,,,,\nFreight and forwarding,,,,\nRepairs and maintenance,,,,\nOther expenses,,,,\nDepreciation and amortisation,,,,\nFinance costs,,,,\n\nBalance sheet (put in a separate file),FY22,FY23,FY24,FY25\nInventories,,,,\nTrade receivables,,,,\nTrade payables,,,,\nBorrowings,,,,\n";
   const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"})); a.download="driftline-template.csv"; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
 };
@@ -636,6 +646,7 @@ function fallback(q){
 }
 form.addEventListener("submit",async e=>{
   e.preventDefault(); const q=inp.value.trim(); if(!q||ctl) return;
+  window.dlTrack("plop_question",{suggested:CHIPS.includes(q)?"yes":"no"});
   inp.value=""; addMsg("user",esc(q)); const bubble=addMsg("bot","<p>Thinking…</p>");
   if(liveOff){ bubble.innerHTML=md(fallback(q)); return; }
   turns.push({role:"user",content:q}); if(turns.length>12) turns=turns.slice(-12); if(turns[0].role!=="user") turns.shift();
