@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Diagnostic · DriftLine</title>
+<meta name="description" content="Run a free cost diagnostic on your P&L and balance sheet.">
+<meta name="theme-color" content="#0b6e5f">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+:root{--accent:var(--brand);--mark:var(--drift);--accent-soft:var(--brand-soft);--rule:var(--line)}
+body{font-size:15px}
+.appbar .wrap{max-width:1360px}
+.appbar .crumb{color:var(--muted);font-size:14px;padding-left:16px;margin-left:4px;border-left:1px solid var(--line)}
+@media (max-width:560px){.appbar .crumb{display:none}}
+.shell{max-width:1360px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));padding-block:28px 64px}
+.page-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;margin-bottom:20px}
+.page-head h1{font-size:clamp(26px,3vw,34px);font-weight:800}
+.page-head p{color:var(--muted);margin-top:4px}
+.status{display:inline-flex;align-items:center;gap:8px;font:500 13px var(--f-body);padding:7px 12px;border-radius:999px;background:var(--warn-soft);color:var(--warn)}
+.status::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.status.own{background:var(--good-soft);color:var(--good)}
+
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:24px;align-items:start}
+@media (max-width:1080px){.layout{grid-template-columns:minmax(0,1fr)}}
+.stack{display:flex;flex-direction:column;gap:20px;min-width:0}
+.card,.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px;min-width:0}
+.panel h2,.card h2{font-size:22px;font-weight:700;margin:2px 0 4px}
+.eyebrow{color:var(--muted)}
+
+/* upload */
+.drops{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+@media (max-width:640px){.drops{grid-template-columns:1fr}}
+.drop{position:relative;border:1.5px dashed var(--line-strong);border-radius:12px;padding:20px;display:grid;grid-template-columns:40px 1fr;gap:14px;align-items:center;background:var(--bg);transition:border-color .15s,background .15s;cursor:pointer}
+.drop:hover,.drop.over{border-color:var(--brand);background:var(--brand-soft)}
+.drop input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.drop .ic{width:40px;height:40px;border-radius:10px;background:var(--surface);border:1px solid var(--line);display:grid;place-items:center;color:var(--brand)}
+.drop b{display:block;font-size:15px}
+.drop span{font-size:13.5px;color:var(--muted)}
+.drop .file{color:var(--good);font-weight:500}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:16px}
+.unit{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted);margin-left:auto}
+.unit input{width:84px;font:14px var(--f-body);padding:8px 10px;border:1px solid var(--line-strong);border-radius:8px;background:var(--bg);color:var(--ink)}
+.linkbtn{background:none;border:0;padding:0;color:var(--brand);font:500 14px var(--f-body);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+details.raw{margin-top:14px}
+details.raw summary{cursor:pointer;color:var(--brand);font-weight:500;font-size:14px}
+.raws{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+@media (max-width:760px){.raws{grid-template-columns:1fr}}
+.raws label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+textarea{width:100%;min-height:180px;font:12.5px/1.5 var(--f-mono);background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px;resize:vertical;white-space:pre;overflow-x:auto}
+.err{color:var(--bad);font-size:14px}
+.hint{font-size:13.5px;color:var(--muted)}
+.lede{color:var(--muted);max-width:70ch;margin:0 0 14px}
+
+/* report */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:12px;overflow:hidden}
+@media (max-width:820px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{padding:16px 18px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:-1px}
+.kpi:last-child{border-right:0}
+@media (max-width:820px){.kpi:nth-child(2n){border-right:0}}
+.kpi .v{font:700 28px/1.2 var(--f-display);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:13px;color:var(--muted)}
+.delta-bad{color:var(--bad)!important}.delta-good{color:var(--good)!important}
+.chart-wrap{overflow-x:auto;margin-top:18px}
+svg text{font-family:var(--f-mono);font-size:11px;fill:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.slider{display:flex;align-items:center;gap:10px;font-size:14px;background:var(--bg);border:1px solid var(--line);padding:8px 12px;border-radius:999px}
+.slider input{accent-color:var(--brand);width:130px}
+.tbl-wrap{overflow-x:auto;margin-top:14px}
+table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+th{font:500 11px var(--f-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:11px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr:hover td{background:var(--bg)}
+td.num,th.num{text-align:right;white-space:nowrap}
+.barcell{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.bar{height:8px;background:var(--drift);border-radius:4px}
+.chip{display:inline-block;font:500 11px var(--f-mono);padding:3px 8px;border-radius:5px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.chip.high{background:var(--bad-soft);color:var(--bad)}
+.chip.med{background:var(--warn-soft);color:var(--warn)}
+.chip.low{background:var(--sunken);color:var(--muted)}
+.insights{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:760px){.insights{grid-template-columns:1fr}}
+.insight{border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:var(--surface);min-width:0;position:relative;overflow:hidden}
+.insight::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--drift)}
+.insight.cash::before{background:var(--brand)}
+.insight h3{font-size:17px;margin:2px 0 6px}
+.insight .amt{font:700 22px var(--f-display);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.insight p{margin:6px 0;font-size:14.5px}
+.insight h4{font:500 11px var(--f-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:12px 0 4px}
+.insight ul{margin:0;padding-left:18px}
+.insight li{margin:2px 0;font-size:14px}
+.insight details summary{cursor:pointer;font-weight:500;font-size:14px;color:var(--brand);margin-top:8px}
+.limits{background:var(--sunken);border-radius:14px;padding:20px 24px}
+.limits h3{font-size:18px}
+.limits ul{margin:8px 0 0;padding-left:18px;color:var(--muted)}
+.upsell{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;background:var(--brand-soft);border-radius:14px;padding:20px 24px}
+.upsell h3{font-size:19px}
+.upsell p{color:var(--muted);font-size:14.5px;margin-top:4px;max-width:56ch}
+
+/* chat */
+.chat{position:sticky;top:calc(env(safe-area-inset-top,0px) + 80px);display:flex;flex-direction:column;max-height:calc(100vh - 100px);min-height:520px;padding:0;overflow:hidden}
+@media (max-width:1080px){.chat{position:static;max-height:none;min-height:0}}
+.chat-head{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--brand);color:var(--on-brand);display:grid;place-items:center;font:800 16px var(--f-display);flex:none}
+.chat-head b{display:block;font-size:16px}
+.chat-head span{font-size:13px;color:var(--muted)}
+.chat-log{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:12px;min-height:220px}
+@media (max-width:1080px){.chat-log{max-height:460px}}
+.msg{max-width:92%;padding:10px 13px;border-radius:14px;font-size:14.5px;line-height:1.5;overflow-wrap:anywhere}
+.msg.user{align-self:flex-end;background:var(--brand);color:var(--on-brand);border-bottom-right-radius:4px}
+.msg.bot{align-self:flex-start;background:var(--sunken);border-bottom-left-radius:4px}
+.msg.bot p{margin:0 0 6px}.msg.bot p:last-child{margin:0}
+.msg.bot ul{margin:4px 0;padding-left:18px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 18px 10px}
+.chips button{font:13px var(--f-body);background:var(--surface);border:1px solid var(--line-strong);color:var(--ink);border-radius:999px;padding:5px 11px;cursor:pointer;text-align:left}
+.chips button:hover{border-color:var(--brand);color:var(--brand)}
+.chat form{display:flex;gap:8px;padding:12px 18px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}
+.chat input[type=text]{flex:1;min-width:0;font:14.5px var(--f-body);padding:10px 12px;border:1px solid var(--line-strong);border-radius:9px;background:var(--bg);color:var(--ink)}
+.chat-note{font-size:12px;color:var(--muted);padding:0 18px 10px}
+</style>
+</head>
+<body>
+<header class="nav appbar">
+  <div class="wrap">
+    <a class="logo" href="/" aria-label="DriftLine home">
+      <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="var(--brand)"/><path d="M5.5 19.5h17" stroke="var(--on-brand)" stroke-opacity=".5" stroke-width="1.8" stroke-dasharray="2 2.4"/><path d="M5.5 19.5C11 19.5 13 15.5 16 13.5S20 9.5 22 8.5" fill="none" stroke="var(--on-brand)" stroke-width="2.2" stroke-linecap="round"/><circle cx="22" cy="8.5" r="2.7" fill="var(--drift)"/></svg>
+      DriftLine
+    </a>
+    <span class="crumb">Diagnostic</span>
+    <nav class="nav-links" aria-label="Main">
+      <a class="hide-sm" href="/#pricing">Pricing</a>
+      <a class="btn primary sm" href="/#early-access">Get Pro early access</a>
+    </nav>
+  </div>
+</header>
+
+<div class="shell">
+  <div class="page-head">
+    <div><h1>Cost diagnostic</h1><p>Upload three or more years of statements. Everything is analysed in your browser.</p></div>
+    <span class="status" id="exampleFlag">Showing the example company (fictional)</span>
+  </div>
+
+  <div class="layout">
+    <div class="stack">
+      <section class="card" aria-labelledby="upTitle">
+        <div class="eyebrow">Step 1</div>
+        <h2 id="upTitle">Add your statements</h2>
+        <p class="hint">One row per line item, one column per financial year. Excel or CSV. <button type="button" class="linkbtn" id="tplBtn">Download a template</button></p>
+        <div class="drops">
+          <label class="drop" id="plDrop">
+            <span class="ic"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5h7l4 4V17a.5.5 0 01-.5.5h-10A.5.5 0 015 17z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 11h5M8 14h5M8 8h2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+            <span><b>Profit &amp; loss</b><span id="plName">Drop a file here, or click to browse</span></span>
+            <input type="file" id="plFile" accept=".csv,.tsv,.txt,.xlsx,.xls" aria-label="Upload profit and loss file">
+          </label>
+          <label class="drop" id="bsDrop">
+            <span class="ic"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 16.5h14M5 13.5v-4M10 13.5v-8M15 13.5v-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+            <span><b>Balance sheet</b><span id="bsName">Optional. Adds working-capital cash.</span></span>
+            <input type="file" id="bsFile" accept=".csv,.tsv,.txt,.xlsx,.xls" aria-label="Upload balance sheet file">
+          </label>
+        </div>
+        <div class="actions">
+          <button class="btn primary" id="runBtn">Analyse</button>
+          <button class="btn" id="sampleBtn">Use example company</button>
+          <label class="unit" for="unitIn">Units <input id="unitIn" type="text" value="₹ Cr"></label>
+        </div>
+        <p class="err" id="errMsg" role="alert"></p>
+        <details class="raw" id="rawBox">
+          <summary>Paste or edit the numbers</summary>
+          <div class="raws">
+            <div><label for="plText">Profit &amp; loss</label><textarea id="plText" spellcheck="false"></textarea></div>
+            <div><label for="bsText">Balance sheet</label><textarea id="bsText" spellcheck="false"></textarea></div>
+          </div>
+        </details>
+      </section>
+
+      <div id="results" class="stack"></div>
+
+      <aside class="upsell">
+        <div><h3>Want this every month?</h3><p>DriftLine Pro will track costs from Tally and Zoho Books, compare you with your industry, and produce a report for your bank or board.</p></div>
+        <a class="btn primary" href="/#early-access">Join early access</a>
+      </aside>
+    </div>
+
+    <aside class="card chat" aria-label="Plop, the DriftLine analyst">
+      <div class="chat-head"><span class="avatar" aria-hidden="true">P</span><div><b>Ask Plop</b><span>Your analyst for these numbers</span></div></div>
+      <div class="chat-log" id="chatLog" aria-live="polite"></div>
+      <div class="chips" id="chatChips"></div>
+      <div class="chat-note" id="chatNote">Plop answers with Google Gemini, using only the figures loaded here. Asking sends a summary of them to Gemini.</div>
+      <form id="chatForm">
+        <input type="text" id="chatIn" placeholder="Ask about your costs…" autocomplete="off" aria-label="Your question">
+        <button class="btn primary sm" id="chatSend" type="submit">Ask</button>
+        <button class="btn sm" id="chatStop" type="button" hidden>Stop</button>
+      </form>
+    </aside>
+  </div>
+</div>
+
+<footer class="foot" style="margin-top:0">
+  <div class="wrap" style="max-width:1360px">
+    <span>© 2026 DriftLine. Not financial advice.</span>
+    <nav aria-label="Footer"><a href="/">Home</a><a href="/#pricing">Pricing</a><a href="/case-study">Case study</a><a href="https://mrudula-portfolio-theta.vercel.app/" target="_blank" rel="noopener">Built by Mrudula Kavuri ↗</a></nav>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+<script>
+/* ===================== Example data (fictional) ===================== */
+const SAMPLE_PL = `Line item,FY22,FY23,FY24,FY25
+Revenue from operations,820,905,960,1010
+Other income,12,14,11,13
+Cost of materials consumed,492,552,595,631
+Employee benefits expense,74,80,88,97
+Power and fuel,33,38,43,47
+Freight and forwarding,25,29,33,37
+Advertising and sales promotion,12,14,15,15
+Repairs and maintenance,9,10,12,14
+Rent,6,6.5,7,7.5
+Travel and conveyance,4,5.5,6.5,7.2
+Legal and professional fees,3.5,4,5.2,6.1
+Other expenses,18,20,23,26
+Depreciation and amortisation,22,24,27,30
+Finance costs,14,16,19,22
+Tax expense,30,30,24.5,21`;
+const SAMPLE_BS = `Line item,FY22,FY23,FY24,FY25
+Property plant and equipment,330,360,395,430
+Inventories,118,138,160,182
+Trade receivables,112,128,145,162
+Cash and cash equivalents,28,22,18,15
+Total assets,640,720,800,880
+Total equity,410,470,516,568
+Borrowings,120,150,180,210
+Trade payables,82,88,92,95`;
+
+/* ===================== Lever library ===================== */
+const CATS = {
+  materials:{name:"Materials / COGS", ctrl:true, risk:"",
+    cannot:"Whether the rise is price (commodity inflation), volume mix (a shift to lower-margin products), or waste (yield, scrap, over-spec). Statements show only the total.",
+    pull:["Purchase register by supplier and material for the last 3 years","Consumption per unit of output (kg per unit, scrap %)","Commodity index for key inputs over the same period","Price changes passed to customers"],
+    levers:["Should-cost models for top 10 materials; renegotiate with the evidence","Index-linked contracts so savings follow when commodity prices fall","Yield and scrap programme on the line with the highest loss","Specification review (value engineering) on high-spend items","Price pass-through clauses in customer contracts"]},
+  employee:{name:"Employee cost", ctrl:true, risk:"Headcount cuts carry morale, attrition and capability risk. Look at productivity and structure before numbers.",
+    cannot:"Whether the rise is wage inflation, headcount growth, overtime, or one-off items like gratuity revaluation.",
+    pull:["Headcount by function and month, permanent vs contract","Average cost per head, overtime hours","Output per employee by plant or team"],
+    levers:["Spans-and-layers review of management levels","Overtime and contract-labour controls","Shift productivity improvements before adding people","Freeze on backfilling non-critical roles"]},
+  power:{name:"Power & fuel", ctrl:true, risk:"",
+    cannot:"Whether units consumed per unit of output rose or the tariff did.",
+    pull:["Monthly electricity units and tariff by site","Fuel consumption per tonne / unit produced","Contract demand vs actual maximum demand"],
+    levers:["Energy audit: compressed-air leaks, motors, lighting","Power-factor correction and contract-demand right-sizing","Open-access or captive renewable power purchase","Shift energy-heavy loads to cheaper time-of-day tariffs"]},
+  freight:{name:"Freight & logistics", ctrl:true, risk:"Cheaper freight that delays deliveries can cost customers.",
+    cannot:"Whether cost per tonne-km rose, or the company is shipping further / smaller loads / to new regions.",
+    pull:["Freight invoices by lane, transporter and load size","Truck utilisation (load factor)","Customer and depot geography changes"],
+    levers:["Re-tender top lanes","Load consolidation and minimum-order rules","Packaging density improvements","Depot / warehouse network review"]},
+  marketing:{name:"Marketing & promotion", ctrl:true, risk:"Cutting marketing improves margin this year and can cut revenue next year. Tie spend to measured return before cutting.",
+    cannot:"Which channels or schemes produced sales.",
+    pull:["Spend by channel and scheme","Sales response by region or scheme","Trade-scheme payouts vs volume achieved"],
+    levers:["Cut schemes with no measurable volume lift","Shift spend to channels with measured return","Tighten dealer-scheme eligibility rules"]},
+  repairs:{name:"Repairs & maintenance", ctrl:true, risk:"Rising repairs often signal ageing assets. Cutting them can cause breakdowns; the real question may be replacement capex.",
+    cannot:"Whether this is reactive breakdown spend, planned maintenance, or deferred capex showing up as repairs.",
+    pull:["Maintenance work orders: breakdown vs planned","Asset age and downtime by machine","Annual maintenance contract terms"],
+    levers:["Shift from breakdown to preventive maintenance","Renegotiate or consolidate maintenance contracts","Spares inventory optimisation","Replace assets where repair cost exceeds replacement payback"]},
+  rent:{name:"Rent & lease", ctrl:true, risk:"",
+    cannot:"Which premises, utilisation, or lease renewal dates.",
+    pull:["Lease register with area, rate and renewal dates","Utilisation per site"],
+    levers:["Consolidate under-used premises","Renegotiate at renewal using market rates"]},
+  travel:{name:"Travel", ctrl:true, risk:"",
+    cannot:"Who travels, why, and at what class or booking lead time.",
+    pull:["Travel spend by employee grade and purpose","Booking lead times"],
+    levers:["Travel policy by grade, advance booking rules","Replace internal travel with virtual meetings","Corporate rates with airlines and hotels"]},
+  professional:{name:"Professional fees", ctrl:true, risk:"Some of this may be one-off (litigation, a transaction). Remove one-offs before judging the trend.",
+    cannot:"Which advisers, what scope, and what was one-off.",
+    pull:["Fees by adviser and engagement","One-off vs recurring split"],
+    levers:["Consolidate advisers, agree rate cards","Scope review of recurring retainers","Bring routine work in-house where volume justifies"]},
+  other:{name:"Other / miscellaneous", ctrl:true, risk:"",
+    cannot:"Anything. 'Other expenses' bundles many accounts, and the real levers sit inside it.",
+    pull:["General ledger break-up of this line for 3 years","Top 20 vendors within it"],
+    levers:["Unbundle into categories first; the action depends on what is inside","Approval thresholds for discretionary spend","Zero-based review of the largest sub-accounts"]},
+  generic:{name:"Unclassified line", ctrl:true, risk:"",
+    cannot:"What drives this line. It did not match a known category.",
+    pull:["General ledger break-up of this line"],
+    levers:["Review the line's sub-accounts before choosing an action"]},
+  depreciation:{name:"Depreciation", ctrl:false},
+  finance:{name:"Finance cost", ctrl:false},
+};
+
+/* ===================== Parsing ===================== */
+function splitLine(line, delim){
+  if(delim==="\t") return line.split("\t");
+  const out=[]; let cur="", q=false;
+  for(let i=0;i<line.length;i++){const c=line[i];
+    if(c==='"'){ if(q&&line[i+1]==='"'){cur+='"';i++;} else q=!q; }
+    else if(c===delim&&!q){out.push(cur);cur="";}
+    else cur+=c;}
+  out.push(cur); return out;
+}
+function toNum(s){
+  if(s==null) return null; s=String(s).trim(); if(!s||s==="-"||s==="—") return 0;
+  let neg=false; if(/^\(.*\)$/.test(s)){neg=true;s=s.slice(1,-1);}
+  s=s.replace(/[,₹$€£\s]/g,""); const n=parseFloat(s); if(isNaN(n)) return null; return neg?-n:n;
+}
+function parseTable(text){
+  const lines=text.split(/\r?\n/).filter(l=>l.trim());
+  if(lines.length<2) return null;
+  const delim=lines[0].includes("\t")?"\t":(lines[0].includes(";")&&!lines[0].includes(",")?";":",");
+  const head=splitLine(lines[0],delim).map(s=>s.trim());
+  let years=head.slice(1).filter(Boolean);
+  let rows=[];
+  for(const l of lines.slice(1)){
+    const cells=splitLine(l,delim); const label=(cells[0]||"").trim(); if(!label) continue;
+    const vals=years.map((_,i)=>toNum(cells[i+1]));
+    if(vals.every(v=>v===null)) continue;
+    rows.push({label,vals:vals.map(v=>v??0)});
+  }
+  // reverse if newest-first
+  const yn=years.map(y=>{const m=String(y).match(/(\d{2,4})(?!.*\d)/);return m?parseInt(m[1].slice(-2)):NaN});
+  if(yn.length>1&&!isNaN(yn[0])&&!isNaN(yn[yn.length-1])&&yn[0]>yn[yn.length-1]){
+    years=years.slice().reverse(); rows=rows.map(r=>({label:r.label,vals:r.vals.slice().reverse()}));
+  }
+  return {years,rows};
+}
+const PL_SKIP=/total|profit|ebitda|\bpbt\b|\bpat\b|margin|earnings per|loss before|loss after|exceptional/i;
+const PL_MAP=[
+  ["otherIncome",/other income/i],
+  ["revenue",/revenue|net sales|^sales|turnover|income from operations/i],
+  ["tax",/\btax/i],
+  ["depreciation",/depreciation|amorti/i],
+  ["finance",/finance cost|interest|borrowing cost/i],
+  ["materials",/material|cost of goods|\bcogs\b|cost of sales|purchases? of stock|changes in inventor|cost of revenue/i],
+  ["employee",/employee|salar|wages|staff|personnel|payroll/i],
+  ["power",/power|fuel|electric|energy|utilit/i],
+  ["marketing",/advertis|marketing|promotion|brand/i],
+  ["travel",/travel|conveyance/i],
+  ["freight",/freight|forwarding|logistic|transport|carriage|distribution/i],
+  ["repairs",/repair|maintenance/i],
+  ["rent",/\brent|lease/i],
+  ["professional",/legal|professional|consult|audit/i],
+  ["other",/other expense|misc|general|administrative|sundry|other operating/i],
+];
+const BS_MAP=[
+  ["totalAssets",/total assets/i],
+  ["inventory",/inventor|stock in trade/i],
+  ["receivables",/receivable|debtors/i],
+  ["payables",/payable|creditors/i],
+  ["cash",/cash|bank balance/i],
+  ["borrowings",/borrowing|loan|debt/i],
+  ["equity",/equity|net worth|shareholders/i],
+  ["fixedAssets",/property|plant|fixed asset|\bppe\b/i],
+];
+function mapRows(tbl, map, skip){
+  const out={}, unmatched=[];
+  for(const r of tbl.rows){
+    const isTotal=/total/i.test(r.label);
+    let key=null;
+    for(const [k,re] of map){ if(re.test(r.label)){key=k;break;} }
+    if(skip && skip.test(r.label) && !(key==="revenue"&&/revenue from operations/i.test(r.label))) continue;
+    if(!key){ unmatched.push(r); continue; }
+    (out[key]=out[key]||[]).push({...r,isTotal});
+  }
+  const res={};
+  for(const k in out){
+    const tots=out[k].filter(x=>x.isTotal); const use=tots.length?[tots[0]]:out[k];
+    res[k]={labels:use.map(x=>x.label),vals:use[0].vals.map((_,i)=>use.reduce((s,x)=>s+(x.vals[i]||0),0))};
+  }
+  return {res,unmatched};
+}
+
+/* ===================== Analysis engine ===================== */
+const pct=(a,b)=>b?a/b*100:0;
+const cagr=(a,b,n)=>(a>0&&b>0&&n>0)?(Math.pow(b/a,1/n)-1)*100:null;
+function analyse(plText, bsText){
+  const pl=parseTable(plText); if(!pl) throw new Error("The P&L needs a header row of years and at least one line item.");
+  if(pl.years.length<2) throw new Error("Add at least two years of P&L. Three or more makes trends meaningful.");
+  const {res:P,unmatched}=mapRows(pl,PL_MAP,PL_SKIP);
+  if(!P.revenue) throw new Error("No revenue line found. Name it 'Revenue', 'Revenue from operations', 'Net sales' or 'Turnover'.");
+  const Y=pl.years, n=Y.length, L=n-1, rev=P.revenue.vals;
+  if(rev.some(v=>v<=0)) throw new Error("Revenue must be positive in every year.");
+  // cost lines
+  const lines=[];
+  const add=(key,cat,label,vals)=>{
+    const ratio=vals.map((v,i)=>pct(v,rev[i]));
+    let bestIdx=0; ratio.forEach((r,i)=>{if(r<ratio[bestIdx])bestIdx=i;});
+    const gapPct=Math.max(0,ratio[L]-ratio[bestIdx]);
+    const gap=gapPct/100*rev[L];
+    let ups=0; for(let i=1;i<n;i++) if(ratio[i]>ratio[i-1]+0.02) ups++;
+    const rising=ups===n-1&&n>=3;
+    const costC=cagr(vals[0],vals[L],L), revC=cagr(rev[0],rev[L],L);
+    const conf= gap<=0?"none": rising?"high": (ratio[L]>ratio[0]?"med":"low");
+    lines.push({key,cat,label,vals,ratio,bestIdx,gapPct,gap,costC,revC,conf,ctrl:CATS[cat].ctrl});
+  };
+  for(const k of ["materials","employee","power","freight","marketing","repairs","rent","travel","professional","other","depreciation","finance"]){
+    if(P[k]) add(k,k,P[k].labels.length>1?CATS[k].name:P[k].labels[0],P[k].vals);
+  }
+  unmatched.forEach((r,i)=>add("x"+i,"generic",r.label,r.vals));
+  const opexKeys=lines.filter(l=>l.ctrl);
+  const opex=Y.map((_,i)=>opexKeys.reduce((s,l)=>s+l.vals[i],0));
+  const dep=P.depreciation?P.depreciation.vals:Y.map(()=>0);
+  const fin=P.finance?P.finance.vals:Y.map(()=>0);
+  const oi=P.otherIncome?P.otherIncome.vals:Y.map(()=>0);
+  const ebitda=rev.map((r,i)=>r-opex[i]);
+  const pbt=rev.map((r,i)=>r+oi[i]-opex[i]-dep[i]-fin[i]);
+  const tax=P.tax?P.tax.vals:null;
+  // balance sheet
+  let WC=null, BS=null, rate=null, rateAssumed=false, wcItems=[];
+  const bs=bsText&&bsText.trim()?parseTable(bsText):null;
+  if(bs){
+    BS=mapRows(bs,BS_MAP,null).res;
+    const align=(k)=>{ if(!BS[k]) return null; const v=BS[k].vals; // align by position from the end
+      const out=Y.map(()=>null); for(let i=0;i<Math.min(v.length,n);i++) out[n-1-i]=v[v.length-1-i]; return out; };
+    const inv=align("inventory"), recv=align("receivables"), pay=align("payables"), borr=align("borrowings");
+    const cogsBase=P.materials?P.materials.vals:opex;
+    const days=(arr,base)=>arr?arr.map((v,i)=>v==null?null:(base[i]?v/base[i]*365:null)):null;
+    WC={dio:days(inv,cogsBase),dso:days(recv,rev),dpo:days(pay,cogsBase),inv,recv,pay,borr,cogsLabel:P.materials?"materials":"operating cost"};
+    if(borr&&borr[L]&&fin[L]){ const avg=borr[L-1]!=null?(borr[L]+borr[L-1])/2:borr[L]; rate=fin[L]/avg*100; }
+    if(!rate||rate>30||rate<2){rate=10;rateAssumed=true;}
+    const mk=(id,label,series,base,dir)=>{
+      if(!series) return; const valid=series.map((v,i)=>v==null?null:{v,i}).filter(Boolean); if(valid.length<2) return;
+      const best=dir==="low"?valid.reduce((a,b)=>b.v<a.v?b:a):valid.reduce((a,b)=>b.v>a.v?b:a);
+      const cur=series[L]; if(cur==null) return;
+      const gapDays=dir==="low"?cur-best.v:best.v-cur; if(gapDays<=0.5) return;
+      const cash=gapDays*base[L]/365;
+      wcItems.push({id,label,series,bestIdx:best.i,gapDays,cash,interest:cash*rate/100});
+    };
+    mk("dio","Inventory days",WC.dio,cogsBase,"low");
+    mk("dso","Receivable days",WC.dso,rev,"low");
+    mk("dpo","Payable days",WC.dpo,cogsBase,"high");
+  }
+  return {Y,n,L,rev,oi,opex,ebitda,pbt,tax,dep,fin,lines,WC,wcItems,rate,rateAssumed,BS,unmatchedCount:unmatched.length};
+}
+
+/* ===================== Formatting ===================== */
+let UNIT="₹ Cr";
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fm=(v,d=1)=>(v==null||isNaN(v))?"–":v.toLocaleString("en-IN",{minimumFractionDigits:d,maximumFractionDigits:d});
+const money=(v,d=1)=>fm(v,d)+" "+UNIT;
+const pp=v=>(v>0?"+":"")+fm(v,1)+" pp";
+
+function spark(series,bestIdx,w=84,h=24){
+  const v=series.map(x=>x==null?NaN:x).filter(x=>!isNaN(x)); if(v.length<2) return "";
+  const mn=Math.min(...v), mx=Math.max(...v), r=mx-mn||1, n=series.length;
+  const pts=series.map((x,i)=>[2+i*(w-4)/(n-1), h-3-((x-mn)/r)*(h-6)]);
+  const d=pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
+  const last=pts[n-1], b=pts[bestIdx];
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><path d="${d}" fill="none" stroke="var(--muted)" stroke-width="1.5"/>`+
+    (b?`<circle cx="${b[0]}" cy="${b[1]}" r="2.6" fill="var(--good)"/>`:"")+
+    `<circle cx="${last[0]}" cy="${last[1]}" r="3" fill="var(--mark)"/></svg>`;
+}
+function marginChart(A){
+  const W=640,H=230,pl=44,pr=96,pt=16,pb=30;
+  const e=A.ebitda.map((x,i)=>pct(x,A.rev[i])), p=A.pbt.map((x,i)=>pct(x,A.rev[i]));
+  const all=[...e,...p]; let lo=Math.min(0,Math.floor(Math.min(...all)/2)*2), hi=Math.ceil(Math.max(...all)/2)*2+2;
+  const step=hi-lo>12?4:2;
+  const x=i=>pl+i*(W-pl-pr)/(A.n-1), y=v=>pt+(hi-v)/(hi-lo)*(H-pt-pb);
+  let g="";
+  for(let t=lo;t<=hi;t+=step){g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(t)}" y2="${y(t)}" stroke="var(--rule)" stroke-width="1"/><text x="${pl-8}" y="${y(t)+4}" text-anchor="end">${t}%</text>`;}
+  A.Y.forEach((yr,i)=>{g+=`<text x="${x(i)}" y="${H-8}" text-anchor="middle">${esc(yr)}</text>`;});
+  const path=(s,col)=>{const d=s.map((v,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+y(v).toFixed(1)).join(" ");
+    return `<path d="${d}" fill="none" stroke="${col}" stroke-width="2.5"/>`+s.map((v,i)=>`<circle cx="${x(i)}" cy="${y(v)}" r="${i===A.L?4:2.5}" fill="${col}"/>`).join("");};
+  const lab=(s,col,name)=>`<text x="${x(A.L)+10}" y="${y(s[A.L])+4}" style="fill:${col};font-weight:500">${name} ${fm(s[A.L])}%</text>`;
+  let ly1=y(e[A.L]), ly2=y(p[A.L]);
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:480px;max-width:${W}px" role="img" aria-label="EBITDA and profit-before-tax margin by year">${g}${path(e,"var(--accent)")}${path(p,"var(--mark)")}`+
+    `<text x="${x(A.L)+10}" y="${ly1+4+(Math.abs(ly1-ly2)<14&&ly1>ly2?6:0)}" style="fill:var(--accent);font-weight:500">EBITDA ${fm(e[A.L])}%</text>`+
+    `<text x="${x(A.L)+10}" y="${ly2+4+(Math.abs(ly1-ly2)<14&&ly2>=ly1?6:0)}" style="fill:var(--mark);font-weight:500">PBT ${fm(p[A.L])}%</text></svg>`;
+}
+
+/* ===================== Rendering ===================== */
+let A=null, CAPTURE=50;
+function render(){
+  const R=document.getElementById("results");
+  if(!A){R.innerHTML="";return;}
+  const L=A.L, cap=CAPTURE/100;
+  const eM=A.ebitda.map((x,i)=>pct(x,A.rev[i])), pM=A.pbt.map((x,i)=>pct(x,A.rev[i]));
+  const ops=A.lines.filter(l=>l.ctrl&&l.gap>0).sort((a,b)=>b.gap-a.gap);
+  const totalGap=ops.reduce((s,l)=>s+l.gap,0);
+  const wcCash=A.wcItems.reduce((s,w)=>s+w.cash,0), wcInt=A.wcItems.reduce((s,w)=>s+w.interest,0);
+  const revC=cagr(A.rev[0],A.rev[L],L);
+  const yrs=`${esc(A.Y[0])}–${esc(A.Y[L])}`;
+  let h="";
+  // KPIs
+  h+=`<div class="panel"><div class="eyebrow">2 · Summary, ${yrs}</div><h2 style="margin-bottom:12px">${headline(A,eM,ops,totalGap)}</h2>
+  <div class="kpis">
+    <div class="kpi"><div class="s">Revenue ${esc(A.Y[L])}</div><div class="v">${fm(A.rev[L],0)}</div><div class="s">${UNIT} · ${revC==null?"":fm(revC)+"% CAGR"}</div></div>
+    <div class="kpi"><div class="s">EBITDA margin</div><div class="v">${fm(eM[L])}%</div><div class="s ${eM[L]<eM[0]?"delta-bad":"delta-good"}">${pp(eM[L]-eM[0])} since ${esc(A.Y[0])}</div></div>
+    <div class="kpi"><div class="s">Cost drift vs own best year</div><div class="v">${fm(totalGap,1)}</div><div class="s">${UNIT} a year · ${fm(pct(totalGap,A.rev[L]))}% of revenue</div></div>
+    <div class="kpi"><div class="s">Cash tied up vs best year</div><div class="v">${A.WC?fm(wcCash,1):"–"}</div><div class="s">${A.WC?UNIT+" one-off release":"Add a balance sheet"}</div></div>
+  </div>
+  <div class="chart-wrap" style="margin-top:16px">${marginChart(A)}</div>
+  <p class="hint" style="margin:6px 0 0">EBITDA here = revenue minus operating costs, excluding other income. PBT includes other income, depreciation and finance cost.${A.unmatchedCount?` ${A.unmatchedCount} line item(s) did not match a known category and are shown under their own names.`:""}</p></div>`;
+  // Opportunity table
+  h+=`<div class="panel"><div class="row" style="justify-content:space-between;align-items:flex-end">
+    <div><div class="eyebrow">3 · Where costs drifted</div><h2>Each cost line as a share of revenue</h2>
+    <p class="lede" style="margin:0">Gap = cost of returning the line to its best (lowest) share of revenue in your own history, at ${esc(A.Y[L])} revenue. Green dot marks the best year, amber the latest.</p></div>
+    <label class="slider" for="capIn">Assumed capture <input type="range" id="capIn" min="10" max="100" step="5" value="${CAPTURE}"> <strong id="capOut">${CAPTURE}%</strong></label></div>
+  <div class="tbl-wrap" style="margin-top:12px"><table>
+  <thead><tr><th>Cost line</th><th>Trend</th><th class="num">Latest</th><th class="num">Best (yr)</th><th class="num">CAGR cost / rev</th><th class="num">Gap / yr</th><th class="num">At ${CAPTURE}%</th><th>Signal</th></tr></thead><tbody>`;
+  const maxGap=Math.max(1e-9,...A.lines.map(l=>l.gap));
+  const sorted=A.lines.slice().sort((a,b)=>(b.ctrl-a.ctrl)||(b.gap-a.gap));
+  for(const l of sorted){
+    const conf=!l.ctrl?`<span class="chip low">Fixed cost</span>`:l.conf==="high"?`<span class="chip high">Rising yearly</span>`:l.conf==="med"?`<span class="chip med">Up overall</span>`:l.conf==="low"?`<span class="chip low">Volatile</span>`:`<span class="chip low">Near best</span>`;
+    const g=l.costC!=null&&l.revC!=null?`${fm(l.costC)} / ${fm(l.revC)}%`:"–";
+    h+=`<tr><td>${esc(l.label)}</td><td>${spark(l.ratio,l.bestIdx)}</td><td class="num">${fm(l.ratio[L],2)}%</td><td class="num">${fm(l.ratio[l.bestIdx],2)}% (${esc(A.Y[l.bestIdx])})</td><td class="num ${l.costC>l.revC+1?"delta-bad":""}">${g}</td>
+    <td class="num"><div class="barcell">${l.ctrl&&l.gap>0?`<span class="bar" style="width:${Math.max(3,l.gap/maxGap*60)}px"></span>`:""}${l.ctrl?fm(l.gap):"–"}</div></td><td class="num"><strong>${l.ctrl?fm(l.gap*cap):"–"}</strong></td><td>${conf}</td></tr>`;
+  }
+  h+=`<tr><td colspan="5"><strong>Controllable total</strong></td><td class="num"><strong>${fm(totalGap)}</strong></td><td class="num"><strong>${fm(totalGap*cap)}</strong></td><td class="hint">${fm(pct(totalGap*cap,A.rev[L]))} pp of margin</td></tr></tbody></table></div>
+  <p class="hint" style="margin:8px 0 0">The capture rate is an assumption, not a finding. Full reversion to a best year rarely happens, because some drift is input inflation the company cannot control.</p></div>`;
+  // Working capital
+  if(A.WC){
+    h+=`<div class="panel"><div class="eyebrow">4 · Working capital</div><h2>Cash, not cost, but it shows up in interest</h2>
+    <p class="lede" style="margin:0 0 10px">Days computed on year-end balances${A.WC.cogsLabel==="materials"?"; inventory and payable days use materials cost":""}. Cash release is a one-off; only the interest saved recurs. Interest rate ${A.rateAssumed?"assumed at 10% (could not infer it)":"inferred at "+fm(A.rate)+"% from finance cost ÷ average borrowings"}.</p>
+    <div class="tbl-wrap"><table><thead><tr><th>Metric</th><th>Trend</th>${A.Y.map(y=>`<th class="num">${esc(y)}</th>`).join("")}<th class="num">Cash release</th><th class="num">Interest / yr</th></tr></thead><tbody>`;
+    for(const [id,label,s] of [["dio","Inventory days",A.WC.dio],["dso","Receivable days",A.WC.dso],["dpo","Payable days",A.WC.dpo]]){
+      if(!s) continue; const it=A.wcItems.find(w=>w.id===id);
+      const bi=it?it.bestIdx:0;
+      h+=`<tr><td>${label}</td><td>${spark(s.map(v=>v??NaN),bi)}</td>${s.map(v=>`<td class="num">${v==null?"–":fm(v,0)}</td>`).join("")}<td class="num">${it?fm(it.cash):"–"}</td><td class="num">${it?fm(it.interest,2):"–"}</td></tr>`;
+    }
+    h+=`</tbody></table></div></div>`;
+  }
+  // insights
+  const cards=[...ops.slice(0,6).map(l=>({kind:"cost",l})), ...A.wcItems.map(w=>({kind:"wc",w}))];
+  h+=`<div class="panel"><div class="eyebrow">5 · Insights</div><h2>Where to look first, and what to ask</h2>
+  <p class="lede">Ranked by size. Each one says what the statements show, what they cannot show, and the data that would turn the signal into an action.</p><div class="insights">`;
+  for(const c of cards){
+    if(c.kind==="cost"){
+      const l=c.l, C=CATS[l.cat];
+      h+=`<article class="insight"><div class="eyebrow">${esc(C.name)}</div><h3>${esc(l.label)}</h3>
+      <div class="amt">${money(l.gap*cap)} <span class="hint" style="font-weight:400">/ yr at ${CAPTURE}% capture</span></div>
+      <p>Rose from ${fm(l.ratio[l.bestIdx],2)}% of revenue in ${esc(A.Y[l.bestIdx])} to ${fm(l.ratio[L],2)}% in ${esc(A.Y[L])}${l.costC!=null&&l.revC!=null?`. The line grew ${fm(l.costC)}% a year while revenue grew ${fm(l.revC)}%`:""}.</p>
+      ${C.risk?`<p class="delta-bad" style="font-size:14px"><strong>Caution:</strong> ${esc(C.risk)}</p>`:""}
+      <details><summary>What the numbers can't tell you, and next steps</summary>
+      <h4>Not visible in statements</h4><p style="font-size:14px">${esc(C.cannot)}</p>
+      <h4>Data to pull</h4><ul>${C.pull.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
+      <h4>Typical levers, if the data confirms it</h4><ul>${C.levers.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></details></article>`;
+    } else {
+      const w=c.w; const s=w.series;
+      h+=`<article class="insight cash"><div class="eyebrow">Working capital</div><h3>${esc(w.label)}</h3>
+      <div class="amt">${money(w.cash)} <span class="hint" style="font-weight:400">cash, ${money(w.interest,2)} interest / yr</span></div>
+      <p>${w.id==="dpo"?"Fell":"Rose"} from ${fm(s[w.bestIdx],0)} days in ${esc(A.Y[w.bestIdx])} to ${fm(s[L],0)} in ${esc(A.Y[L])}.</p>
+      <details><summary>What to check</summary><ul>${
+        (w.id==="dio"?["Split raw material, WIP and finished goods; which one grew?","Slow-moving and obsolete stock older than 180 days","Safety-stock rules vs actual supplier lead times"]:
+         w.id==="dso"?["Ageing of receivables by customer; are a few customers driving it?","Credit terms granted vs collected","Disputed invoices and deductions"]:
+         ["Were supplier terms shortened, or are you paying early for discounts?","Whether paying slower would strain small suppliers (and the legal 45-day MSME payment rule in India)"]).map(x=>`<li>${esc(x)}</li>`).join("")
+      }</ul></details></article>`;
+    }
+  }
+  if(!cards.length) h+=`<p>No line has drifted above its best year. Cost-out from history alone looks limited; peer benchmarks or ledger data would be the next step.</p>`;
+  h+=`</div></div>`;
+  h+=`<div class="limits"><h3>What this diagnostic cannot see</h3><ul>
+    <li>Prices vs volumes: a rising ratio can be input inflation, product mix or genuine waste.</li>
+    <li>One-off items buried in a line (a lawsuit, a plant shutdown, a revaluation).</li>
+    <li>How you compare to peers. Your own best year may still be inefficient.</li>
+    <li>Revenue-side levers such as pricing, discounts and customer profitability, which are often larger than cost savings.</li></ul></div>`;
+  R.innerHTML=h;
+  const capIn=document.getElementById("capIn");
+  capIn.addEventListener("input",()=>{CAPTURE=+capIn.value;render();document.getElementById("capIn").focus();});
+}
+function headline(A,eM,ops,totalGap){
+  const d=eM[A.L]-eM[0];
+  const top=ops.slice(0,2).map(l=>l.label.toLowerCase());
+  if(d<-0.5&&top.length) return `EBITDA margin fell ${fm(-d)} points; ${esc(top.join(" and "))} explain the largest share.`;
+  if(d>=-0.5&&totalGap>0) return `Margins held, but ${fm(totalGap)} ${UNIT} of cost has drifted above its best year.`;
+  return `Costs are close to their best historical levels.`;
+}
+
+/* ===================== Controls ===================== */
+const plT=document.getElementById("plText"), bsT=document.getElementById("bsText"), errEl=document.getElementById("errMsg"), flag=document.getElementById("exampleFlag");
+function run(){
+  errEl.textContent=""; UNIT=document.getElementById("unitIn").value.trim()||"units";
+  try{ A=analyse(plT.value,bsT.value); render(); resetChat(); }
+  catch(e){ errEl.textContent=e.message; }
+}
+function loadSample(){ ["plName","bsName"].forEach((id,i)=>{const n=document.getElementById(id);n.className="";n.textContent=i?"Optional. Adds working-capital cash.":"Drop a file here, or click to browse";}); plT.value=SAMPLE_PL; bsT.value=SAMPLE_BS; setStatus(false); document.getElementById("unitIn").value="₹ Cr"; run(); }
+document.getElementById("runBtn").onclick=run;
+document.getElementById("sampleBtn").onclick=loadSample;
+[plT,bsT].forEach(t=>t.addEventListener("input",()=>{setStatus(true);}));
+async function readFile(file,target){
+  errEl.textContent="";
+  try{
+    if(/\.xlsx?$/i.test(file.name)){
+      if(typeof XLSX==="undefined") throw new Error("Excel reader did not load. Save the sheet as CSV and upload that.");
+      const wb=XLSX.read(await file.arrayBuffer(),{type:"array"});
+      target.value=XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]]);
+    } else target.value=await file.text();
+    setStatus(true);
+  }catch(e){ errEl.textContent=e.message||"Could not read that file."; }
+}
+function setStatus(own){flag.textContent=own?"Showing your statements":"Showing the example company (fictional)";flag.classList.toggle("own",own);}
+async function takeFile(file,target,nameEl){ nameEl.textContent=file.name; nameEl.className="file"; await readFile(file,target); if(plT.value.trim()) run(); }
+[["plFile","plDrop","plName",plT],["bsFile","bsDrop","bsName",bsT]].forEach(([fid,did,nid,t])=>{
+  const inp=document.getElementById(fid), drop=document.getElementById(did), nm=document.getElementById(nid);
+  inp.onchange=e=>{ if(e.target.files[0]) takeFile(e.target.files[0],t,nm); };
+  ["dragenter","dragover"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("over");}));
+  ["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("over");}));
+  drop.addEventListener("drop",e=>{const f=e.dataTransfer&&e.dataTransfer.files[0]; if(f) takeFile(f,t,nm);});
+});
+document.getElementById("tplBtn").onclick=()=>{
+  const csv="Line item,FY22,FY23,FY24,FY25\nRevenue from operations,,,,\nOther income,,,,\nCost of materials consumed,,,,\nEmployee benefits expense,,,,\nPower and fuel,,,,\nFreight and forwarding,,,,\nRepairs and maintenance,,,,\nOther expenses,,,,\nDepreciation and amortisation,,,,\nFinance costs,,,,\n\nBalance sheet (put in a separate file),FY22,FY23,FY24,FY25\nInventories,,,,\nTrade receivables,,,,\nTrade payables,,,,\nBorrowings,,,,\n";
+  const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"})); a.download="driftline-template.csv"; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
+};
+/* ===================== Chat ===================== */
+const log=document.getElementById("chatLog"), chipsEl=document.getElementById("chatChips"), form=document.getElementById("chatForm"), inp=document.getElementById("chatIn"), sendB=document.getElementById("chatSend"), stopB=document.getElementById("chatStop"), note=document.getElementById("chatNote");
+let turns=[], liveOff=false, ctl=null;
+const CHIPS=["Why did EBITDA margin fall?","Which saving should we start with?","Is the materials increase really inefficiency?","How much cash is stuck in inventory?","What data should we pull before acting?"];
+function md(t){
+  const lines=esc(t).split(/\n/); let out="", inList=false;
+  for(const ln of lines){
+    const b=ln.replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>");
+    if(/^\s*[-*•]\s+/.test(ln)){ if(!inList){out+="<ul>";inList=true;} out+="<li>"+b.replace(/^\s*[-*•]\s+/,"")+"</li>"; }
+    else { if(inList){out+="</ul>";inList=false;} if(b.trim()) out+="<p>"+b+"</p>"; }
+  }
+  if(inList) out+="</ul>"; return out;
+}
+function addMsg(role,html){const d=document.createElement("div");d.className="msg "+role;d.innerHTML=html;log.appendChild(d);log.scrollTop=log.scrollHeight;return d;}
+function resetChat(){
+  turns=[]; log.innerHTML="";
+  addMsg("bot",md(A?`I'm Plop. I have the statements for ${A.Y[0]}–${A.Y[A.L]}. Ask me about margins, specific cost lines or working capital. I will say when the statements can't answer something.`:"Load statements to start."));
+  chipsEl.innerHTML=CHIPS.map(c=>`<button type="button">${esc(c)}</button>`).join("");
+  chipsEl.querySelectorAll("button").forEach(b=>b.onclick=()=>{inp.value=b.textContent;form.requestSubmit();});
+}
+function context(){
+  if(!A) return "No data loaded.";
+  const r2=v=>v==null?null:Math.round(v*100)/100;
+  const o={units:UNIT,years:A.Y,revenue:A.rev,otherIncome:A.oi,ebitda:A.ebitda.map(r2),ebitdaMarginPct:A.ebitda.map((x,i)=>r2(pct(x,A.rev[i]))),pbt:A.pbt.map(r2),
+    costLines:A.lines.map(l=>({line:l.label,category:CATS[l.cat].name,controllable:l.ctrl,values:l.vals,pctOfRevenue:l.ratio.map(r2),bestYear:A.Y[l.bestIdx],gapToBestPerYear:r2(l.gap),costCAGRpct:r2(l.costC),revenueCAGRpct:r2(l.revC)})),
+    assumedCaptureRatePct:CAPTURE,
+    workingCapital:A.WC?{inventoryDays:A.WC.dio&&A.WC.dio.map(r2),receivableDays:A.WC.dso&&A.WC.dso.map(r2),payableDays:A.WC.dpo&&A.WC.dpo.map(r2),opportunities:A.wcItems.map(w=>({metric:w.label,bestYear:A.Y[w.bestIdx],cashRelease:r2(w.cash),interestSavedPerYear:r2(w.interest)})),interestRatePct:r2(A.rate),interestRateAssumed:A.rateAssumed}:null,
+    rawPL:plT.value.slice(0,6000),rawBS:bsT.value.slice(0,4000)};
+  return JSON.stringify(o);
+}
+function fallback(q){
+  if(!A) return "Load statements first.";
+  const s=q.toLowerCase(); const L=A.L;
+  const ops=A.lines.filter(l=>l.ctrl&&l.gap>0).sort((a,b)=>b.gap-a.gap);
+  const hit=A.lines.find(l=>s.includes(l.label.toLowerCase().split(" ")[0]));
+  if(hit) return `**${hit.label}**: ${fm(hit.ratio[L],2)}% of revenue in ${A.Y[L]} vs a best of ${fm(hit.ratio[hit.bestIdx],2)}% in ${A.Y[hit.bestIdx]}. Gap to best: ${money(hit.gap)} a year.`;
+  if(/cash|inventor|receiv|payab|working/.test(s)) return A.wcItems.length?A.wcItems.map(w=>`- ${w.label}: ${money(w.cash)} release vs ${A.Y[w.bestIdx]}`).join("\n"):"No working-capital drift found, or no balance sheet loaded.";
+  if(/margin|ebitda|profit/.test(s)){const e=A.ebitda.map((x,i)=>pct(x,A.rev[i]));return `EBITDA margin went from ${fm(e[0])}% to ${fm(e[L])}%. Largest drifts: ${ops.slice(0,3).map(l=>l.label+" ("+fm(l.gapPct,2)+" pp)").join(", ")}.`;}
+  return ops.length?`Largest gaps to best year:\n${ops.slice(0,4).map(l=>`- ${l.label}: ${money(l.gap)}`).join("\n")}`:"No cost line is above its best year.";
+}
+form.addEventListener("submit",async e=>{
+  e.preventDefault(); const q=inp.value.trim(); if(!q||ctl) return;
+  inp.value=""; addMsg("user",esc(q)); const bubble=addMsg("bot","<p>Thinking…</p>");
+  if(liveOff){ bubble.innerHTML=md(fallback(q)); return; }
+  turns.push({role:"user",content:q}); if(turns.length>12) turns=turns.slice(-12); if(turns[0].role!=="user") turns.shift();
+  ctl=new AbortController(); sendB.disabled=true; stopB.hidden=false;
+  try{
+    const r=await fetch("/api/plop",{method:"POST",headers:{"Content-Type":"application/json"},signal:ctl.signal,
+      body:JSON.stringify({units:UNIT,data:context(),turns})});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok){
+      turns.pop();
+      if(r.status===429){ bubble.innerHTML=`<p class="hint">${esc(j.error||"Too many questions in a short time. Try again in a minute.")}</p>`; return; }
+      if(r.status===503||r.status===404){ liveOff=true; note.textContent="Live answers aren't switched on for this site, so Plop gives basic lookups from the analysis."; bubble.innerHTML=md(fallback(q)); return; }
+      bubble.innerHTML=`<p class="hint">${esc(j.error||"Plop couldn't answer just now. Ask again.")}</p>`; return;
+    }
+    bubble.innerHTML=md(j.text)+(j.truncated?"<p class='hint'>Answer cut short. Ask for less at a time.</p>":"");
+    turns.push({role:"assistant",content:j.text});
+    log.scrollTop=log.scrollHeight;
+  }catch(err){
+    turns.pop();
+    if(err&&err.name==="AbortError"){ bubble.innerHTML="<p class='hint'>Stopped.</p>"; }
+    else { bubble.innerHTML=md(fallback(q))+"<p class='hint'>Couldn't reach Plop's live service, so this is a basic lookup.</p>"; }
+  }finally{ ctl=null; sendB.disabled=false; stopB.hidden=true; }
+});
+stopB.onclick=()=>ctl&&ctl.abort();
+
+loadSample();
+
+</script>
+</body>
+</html>

@@ -3,822 +3,508 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="DriftLine finds where a company's costs have drifted against revenue, using its P&amp;L and balance sheet, and sizes what fixing them is worth.">
-<style>html{-webkit-text-size-adjust:100%}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
-<title>DriftLine</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<title>DriftLine · Find the costs that crept up</title>
+<meta name="description" content="Upload your P&L and balance sheet. DriftLine shows which costs drifted against revenue, what bringing them back is worth, and how much cash is tied up in working capital. Free for Indian MSMEs.">
+<meta property="og:title" content="DriftLine · Find the costs that crept up">
+<meta property="og:description" content="A free cost diagnostic for Indian MSMEs, built from your P&L and balance sheet.">
+<meta name="theme-color" content="#0b6e5f">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="/assets/fonts/bricolage-grotesque-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/site.css">
 <style>
-/* Layout: consultant workpaper. Ledger-ruled header, tabbed workspace, analysis column + sticky advisor chat on wide screens. */
-:root{
-  --bg:#f5f7f9; --surface:#ffffff; --sunken:#eaeef2; --ink:#14202e; --muted:#5a6878; --rule:#d5dce3;
-  --accent:#1d5c8f; --accent-soft:#e1ecf5; --mark:#c98a1b;
-  --good:#2f7a4f; --good-soft:#e2f1e7; --warn:#a86a08; --warn-soft:#f8ecd4; --bad:#b23a3a; --bad-soft:#f6e0e0;
-  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
-  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
-}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0f151c; --surface:#151d26; --sunken:#1c2631; --ink:#e4eaf0; --muted:#94a3b3; --rule:#2a3643;
-  --accent:#6aa8dc; --accent-soft:#1a2c3d; --mark:#e0a73e;
-  --good:#6cc08f; --good-soft:#17301f; --warn:#e2ad4f; --warn-soft:#33270f; --bad:#e58080; --bad-soft:#3a1a1a; color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#0f151c; --surface:#151d26; --sunken:#1c2631; --ink:#e4eaf0; --muted:#94a3b3; --rule:#2a3643;
-  --accent:#6aa8dc; --accent-soft:#1a2c3d; --mark:#e0a73e;
-  --good:#6cc08f; --good-soft:#17301f; --warn:#e2ad4f; --warn-soft:#33270f; --bad:#e58080; --bad-soft:#3a1a1a; color-scheme:dark}
-*{box-sizing:border-box}
-body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
-.wrap{max-width:1280px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-header.top{border-bottom:1px solid var(--rule);background:var(--surface)}
-header.top .wrap{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;padding-block:20px 0}
-.brand h1{font-family:var(--f-display);font-weight:700;font-size:28px;letter-spacing:-.01em;margin:0;line-height:1.1}
-.brand p{margin:4px 0 14px;color:var(--muted);font-size:14px;max-width:62ch}
-.brand .tag{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mark)}
-nav.tabs{display:flex;gap:4px;flex-wrap:wrap}
-nav.tabs button{font:600 14px var(--f-body);background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);padding:10px 14px;cursor:pointer}
-nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
-nav.tabs button:focus-visible,button:focus-visible,textarea:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-main{padding-block:24px 48px}
-h2{font-family:var(--f-display);font-weight:600;font-size:22px;margin:0 0 4px;text-wrap:balance}
-h3{font-family:var(--f-display);font-weight:600;font-size:18px;margin:0 0 6px;text-wrap:balance}
-.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.lede{color:var(--muted);max-width:68ch;margin:0 0 16px}
-.panel{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:18px}
-.grid-main{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:20px;align-items:start}
-@media (max-width:1020px){.grid-main{grid-template-columns:minmax(0,1fr)}}
-.stack{display:flex;flex-direction:column;gap:20px;min-width:0}
-/* input */
-.inputs{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media (max-width:700px){.inputs{grid-template-columns:1fr}}
-.inputs label{display:block;font-weight:600;font-size:14px;margin-bottom:6px}
-textarea{width:100%;min-height:200px;font:12.5px/1.5 var(--f-mono);background:var(--sunken);color:var(--ink);border:1px solid var(--rule);border-radius:4px;padding:10px;resize:vertical;white-space:pre;overflow-x:auto}
-.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-.btn{font:600 14px var(--f-body);border-radius:4px;padding:8px 14px;cursor:pointer;border:1px solid var(--rule);background:var(--surface);color:var(--ink)}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
-.btn:disabled{opacity:.5;cursor:default}
-.filebtn{position:relative;overflow:hidden}
-.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer}
-.hint{font-size:13px;color:var(--muted)}
-.unit{display:flex;align-items:center;gap:6px;font-size:14px}
-.unit input{width:90px;font:14px var(--f-body);padding:6px 8px;border:1px solid var(--rule);border-radius:4px;background:var(--surface);color:var(--ink)}
-.err{color:var(--bad);font-size:14px}
-.example-flag{display:inline-block;font:500 11px var(--f-mono);text-transform:uppercase;letter-spacing:.06em;background:var(--warn-soft);color:var(--warn);padding:2px 8px;border-radius:3px}
-/* summary */
-.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:6px;overflow:hidden}
-@media (max-width:760px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.kpi{background:var(--surface);padding:14px 16px}
-.kpi .v{font-family:var(--f-display);font-size:26px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.2}
-.kpi .s{font-size:13px;color:var(--muted)}
-.delta-bad{color:var(--bad)} .delta-good{color:var(--good)}
-.chart-wrap{overflow-x:auto}
-svg text{font-family:var(--f-mono);font-size:11px;fill:var(--muted)}
-/* table */
-.tbl-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
-th{font:500 11px var(--f-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:left;padding:8px;border-bottom:1px solid var(--rule);white-space:nowrap}
-td{padding:9px 8px;border-bottom:1px solid var(--rule);vertical-align:middle}
-td.num,th.num{text-align:right;white-space:nowrap}
-.barcell{display:flex;align-items:center;gap:8px;justify-content:flex-end}
-.bar{height:8px;background:var(--mark);border-radius:2px}
-.chip{display:inline-block;font:500 11px var(--f-mono);padding:2px 7px;border-radius:3px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
-.chip.high{background:var(--bad-soft);color:var(--bad)}
-.chip.med{background:var(--warn-soft);color:var(--warn)}
-.chip.low{background:var(--sunken);color:var(--muted)}
-.chip.cash{background:var(--accent-soft);color:var(--accent)}
-.slider{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px}
-.slider input{accent-color:var(--accent)}
-/* insights */
-.insights{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
-@media (max-width:760px){.insights{grid-template-columns:1fr}}
-.insight{border:1px solid var(--rule);border-left:4px solid var(--mark);border-radius:4px;padding:14px 16px;background:var(--surface);min-width:0}
-.insight.cash{border-left-color:var(--accent)}
-.insight .amt{font-family:var(--f-display);font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
-.insight p{margin:6px 0}
-.insight h4{font:500 11px var(--f-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:12px 0 4px}
-.insight ul{margin:0;padding-left:18px}
-.insight li{margin:2px 0;font-size:14px}
-details summary{cursor:pointer;font-weight:600;font-size:14px;color:var(--accent);margin-top:8px}
-.limits{background:var(--sunken);border-radius:6px;padding:16px 18px}
-.limits ul{margin:6px 0 0;padding-left:18px}
-/* chat */
-.chat{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:flex;flex-direction:column;max-height:calc(100vh - 32px);min-height:480px;padding:0;overflow:hidden}
-@media (max-width:1020px){.chat{position:static;max-height:none;min-height:0}}
-.chat-head{padding:14px 16px;border-bottom:1px solid var(--rule)}
-.chat-log{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px;min-height:220px}
-@media (max-width:1020px){.chat-log{max-height:460px}}
-.msg{max-width:92%;padding:10px 12px;border-radius:6px;font-size:14px;line-height:1.5;overflow-wrap:anywhere}
-.msg.user{align-self:flex-end;background:var(--accent);color:var(--surface)}
-.msg.bot{align-self:flex-start;background:var(--sunken)}
-.msg.bot p{margin:0 0 6px} .msg.bot p:last-child{margin:0}
-.msg.bot ul{margin:4px 0;padding-left:18px}
-.chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 10px}
-.chips button{font:13px var(--f-body);background:var(--surface);border:1px solid var(--rule);color:var(--ink);border-radius:14px;padding:4px 10px;cursor:pointer;text-align:left}
-.chat form{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--rule)}
-.chat input[type=text]{flex:1;min-width:0;font:14px var(--f-body);padding:9px 10px;border:1px solid var(--rule);border-radius:4px;background:var(--surface);color:var(--ink)}
-.chat-note{font-size:12px;color:var(--muted);padding:0 16px 10px}
-/* review + roadmap */
-.prose{max-width:76ch}
-.prose p,.prose li{font-size:15px}
-.verdict{border:1px solid var(--rule);border-left:4px solid var(--bad);background:var(--surface);border-radius:4px;padding:16px 18px;max-width:80ch}
-.qgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
-@media (max-width:760px){.qgrid{grid-template-columns:1fr}}
-.qcard{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:16px 18px;min-width:0}
-.qcard ol{margin:6px 0 0;padding-left:20px}
-.qcard li{margin:6px 0;font-size:14.5px}
-.ftable td:first-child{font-weight:600;width:24%}
-.phases{display:flex;flex-direction:column;gap:0;border-left:2px solid var(--rule);margin-left:8px}
-.phase{position:relative;padding:0 0 26px 24px}
-.phase::before{content:"";position:absolute;left:-7px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
-.phase .when{font-family:var(--f-mono);font-size:12px;color:var(--accent)}
-.phase-body{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:8px}
-@media (max-width:860px){.phase-body{grid-template-columns:1fr}}
-.phase-body div{background:var(--surface);border:1px solid var(--rule);border-radius:4px;padding:12px 14px;min-width:0}
-.phase-body h4{font:500 11px var(--f-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 6px}
-.phase-body ul{margin:0;padding-left:18px}
-.phase-body li{font-size:14px;margin:3px 0}
-.kill{color:var(--bad)}
-.back{color:var(--mark);text-decoration:none;border-bottom:1px solid currentColor}
-.back:hover{color:var(--accent)}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-</style>
+/* ---------- hero ---------- */
+.hero{padding-block:72px 40px;position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;background:
+  repeating-linear-gradient(to bottom,transparent 0 39px,color-mix(in srgb,var(--line) 70%,transparent) 39px 40px);
+  -webkit-mask-image:linear-gradient(to bottom,#000 0%,transparent 85%);mask-image:linear-gradient(to bottom,#000 0%,transparent 85%);pointer-events:none}
+.hero .wrap{position:relative;display:grid;grid-template-columns:minmax(0,1.02fr) minmax(0,1fr);gap:56px;align-items:center}
+@media (max-width:980px){.hero .wrap{grid-template-columns:minmax(0,1fr);gap:40px}.hero{padding-top:48px}}
+.hero h1{font-size:clamp(40px,5.6vw,66px);line-height:1.02;font-weight:800;margin:16px 0 20px}
+.hero h1 em{font-style:normal;color:var(--drift);position:relative;white-space:nowrap}
+.hero h1 em::after{content:"";position:absolute;left:0;right:0;bottom:.06em;height:.09em;background:var(--drift);opacity:.35;border-radius:2px;transform:rotate(-1.2deg)}
+.hero .lede{font-size:clamp(17px,1.6vw,19px);color:var(--muted);max-width:34em}
+.cta-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
+.checks{display:flex;flex-wrap:wrap;gap:8px 20px;margin:22px 0 0;padding:0;list-style:none;color:var(--muted);font-size:14px}
+.checks li{display:flex;align-items:center;gap:7px}
+.checks svg{color:var(--brand);flex:none}
 
+/* report mock */
+.report{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;position:relative}
+.report-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted)}
+.report-head b{color:var(--ink);font-weight:600}
+.tag{font:500 11px/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;padding:5px 8px;border-radius:5px;background:var(--warn-soft);color:var(--warn);white-space:nowrap}
+.kpis{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line)}
+.kpi{padding:16px 18px}
+.kpi+.kpi{border-left:1px solid var(--line)}
+.kpi .k{font-size:12.5px;color:var(--muted)}
+.kpi .v{font:700 28px/1.15 var(--f-display);letter-spacing:-.02em;margin-top:2px}
+.kpi .v small{font:500 14px var(--f-body);color:var(--muted);letter-spacing:0}
+.kpi .d{font-size:13px;font-weight:500;color:var(--bad)}
+.rows{padding:6px 0 10px}
+.row{display:grid;grid-template-columns:minmax(0,1.5fr) 70px minmax(0,1fr) 54px;gap:12px;align-items:center;padding:9px 18px;font-size:14px}
+.row .name{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .ratio{font:400 12.5px var(--f-mono);color:var(--muted);text-align:right;white-space:nowrap}
+.row .barcell{display:block}
+.row .bar{display:block;height:8px;border-radius:4px;background:var(--sunken);overflow:hidden}
+.row .bar i{display:block;height:100%;background:var(--drift);border-radius:4px}
+.row .gap{font:600 14px var(--f-body);text-align:right;font-variant-numeric:tabular-nums}
+.row.head{font:500 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-block:12px 4px}
+.row.head .gap,.row.head .ratio{font-weight:500}
+.plop-bubble{margin:4px 18px 18px;padding:12px 14px;background:var(--brand-soft);border-radius:12px 12px 12px 4px;font-size:14px;display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start}
+.plop-bubble .who{font:600 12px var(--f-body);color:var(--brand-strong);margin-bottom:2px}
+.avatar{width:28px;height:28px;border-radius:50%;background:var(--brand);color:var(--on-brand);display:grid;place-items:center;font:800 13px var(--f-display)}
+@media (max-width:480px){.row{grid-template-columns:minmax(0,1fr) 60px 46px}.row .barcell{display:none}.kpi .v{font-size:23px}}
+
+/* ---------- sections ---------- */
+section.block{padding-block:88px 0}
+.sec-head{max-width:720px;margin-bottom:40px}
+.sec-head h2{font-size:clamp(30px,3.6vw,44px);line-height:1.08;font-weight:800;margin-top:10px}
+.sec-head p{color:var(--muted);font-size:18px;margin-top:14px}
+
+/* problem */
+.problem{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:56px;align-items:center}
+@media (max-width:900px){.problem{grid-template-columns:minmax(0,1fr);gap:28px}}
+.problem .copy p{color:var(--muted);font-size:17px;margin-top:14px}
+.problem .copy p strong{color:var(--ink)}
+.chart-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px 20px 12px}
+.chart-card .cap{font-size:13px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.chart-card svg{width:100%;height:auto;display:block;margin-top:8px}
+.chart-card svg text{font-family:var(--f-mono);font-size:11px;fill:var(--muted)}
+
+/* steps */
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;counter-reset:s}
+@media (max-width:860px){.steps{grid-template-columns:minmax(0,1fr)}}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:24px}
+.step .n{font:500 13px var(--f-mono);color:var(--brand);display:flex;align-items:center;gap:10px}
+.step .n::after{content:"";height:1px;flex:1;background:var(--line)}
+.step h3{font-size:22px;margin:14px 0 8px}
+.step p{color:var(--muted);font-size:15.5px}
+
+/* features */
+.features{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+@media (max-width:860px){.features{grid-template-columns:minmax(0,1fr)}}
+.feature{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:26px;display:flex;flex-direction:column;gap:18px;min-width:0}
+.feature h3{font-size:21px}
+.feature p{color:var(--muted);font-size:15.5px;margin-top:6px}
+.viz{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:14px 16px;font-size:14px;margin-top:auto}
+.days{display:grid;grid-template-columns:auto 1fr auto;gap:10px 14px;align-items:center}
+.days .lbl{font-weight:500}
+.track{position:relative;height:10px;background:var(--sunken);border-radius:5px}
+.track i{position:absolute;top:0;bottom:0;border-radius:5px}
+.track .best{background:var(--brand);opacity:.35}
+.track .now{background:var(--drift)}
+.days .val{font:500 13px var(--f-mono);color:var(--muted);white-space:nowrap}
+.slider-viz{display:flex;flex-direction:column;gap:10px}
+.slider-viz .lineup{display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
+.slider-viz .rail{height:6px;background:var(--sunken);border-radius:3px;position:relative}
+.slider-viz .rail i{position:absolute;left:0;top:0;bottom:0;width:50%;background:var(--brand);border-radius:3px}
+.slider-viz .rail b{position:absolute;left:50%;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;background:var(--surface);border:3px solid var(--brand);border-radius:50%}
+.slider-viz .out{font:700 22px var(--f-display)}
+.slider-viz .out small{font:400 14px var(--f-body);color:var(--muted)}
+.insight-viz h4{margin:0 0 4px;font:600 15px var(--f-body)}
+.insight-viz ul{margin:6px 0 0;padding-left:18px;color:var(--muted)}
+.insight-viz .lab{font:500 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.chat-viz{display:flex;flex-direction:column;gap:8px}
+.chat-viz .q{align-self:flex-end;background:var(--brand);color:var(--on-brand);padding:8px 12px;border-radius:12px 12px 4px 12px;max-width:85%}
+.chat-viz .a{align-self:flex-start;background:var(--surface);border:1px solid var(--line);padding:9px 12px;border-radius:12px 12px 12px 4px;max-width:92%}
+
+/* limits */
+.limits{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:48px;background:var(--ink);color:var(--bg);border-radius:18px;padding:48px}
+@media (max-width:860px){.limits{grid-template-columns:minmax(0,1fr);padding:32px 24px;gap:24px}}
+.limits h2{font-size:clamp(28px,3.2vw,38px);line-height:1.1;font-weight:800}
+.limits .eyebrow{color:color-mix(in srgb,var(--bg) 70%,var(--brand))}
+.limits p{color:color-mix(in srgb,var(--bg) 72%,var(--ink));margin-top:14px;font-size:17px}
+.limits ul{list-style:none;margin:0;padding:0;display:grid;gap:14px}
+.limits li{display:grid;grid-template-columns:22px 1fr;gap:12px;font-size:16px;color:color-mix(in srgb,var(--bg) 88%,var(--ink))}
+.limits li svg{margin-top:3px;color:var(--drift)}
+.limits li b{color:var(--bg);font-weight:600}
+
+/* audience */
+.audience{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+@media (max-width:860px){.audience{grid-template-columns:minmax(0,1fr)}}
+.aud{border-top:3px solid var(--brand);background:var(--surface);border-radius:0 0 var(--radius) var(--radius);border-left:1px solid var(--line);border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:24px}
+.aud h3{font-size:21px;margin-bottom:8px}
+.aud p{color:var(--muted);font-size:15.5px}
+.aud .use{margin-top:14px;font-size:14px;color:var(--ink);background:var(--bg);border-radius:8px;padding:10px 12px}
+.aud.ca{border-top-color:var(--drift)}
+
+/* pricing */
+.plans{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;align-items:stretch}
+@media (max-width:960px){.plans{grid-template-columns:minmax(0,1fr);max-width:520px}}
+.plan{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:28px;display:flex;flex-direction:column;gap:18px;position:relative}
+.plan.featured{border:2px solid var(--brand);box-shadow:var(--shadow)}
+.plan .badge{position:absolute;top:-12px;left:28px;font:500 11px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;background:var(--brand);color:var(--on-brand);padding:6px 10px;border-radius:5px}
+.plan h3{font-size:22px}
+.plan .for{color:var(--muted);font-size:15px;margin-top:4px}
+.price{font:800 40px/1 var(--f-display);letter-spacing:-.03em}
+.price small{font:400 15px var(--f-body);color:var(--muted);letter-spacing:0}
+.price-note{font-size:13.5px;color:var(--muted);margin-top:6px}
+.plan ul{list-style:none;margin:0;padding:0;display:grid;gap:10px;font-size:15px}
+.plan li{display:grid;grid-template-columns:20px 1fr;gap:8px}
+.plan li svg{margin-top:4px;color:var(--brand)}
+.plan li.soon{color:var(--muted)}
+.plan li.soon svg{color:var(--line-strong)}
+.soon-chip{font:500 10.5px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--warn);background:var(--warn-soft);padding:2px 6px;border-radius:4px;margin-left:6px;white-space:nowrap}
+.plan .btn{margin-top:auto;width:100%}
+.fine{color:var(--muted);font-size:14px;margin-top:20px;max-width:760px}
+
+/* early access */
+.early{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:48px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:44px}
+@media (max-width:860px){.early{grid-template-columns:minmax(0,1fr);padding:28px 22px;gap:24px}}
+.early h2{font-size:clamp(28px,3vw,36px);font-weight:800;line-height:1.1}
+.early .copy p{color:var(--muted);margin-top:12px}
+form.ea{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:560px){form.ea{grid-template-columns:1fr}}
+form.ea .full{grid-column:1/-1}
+form.ea label{display:block;font-size:14px;font-weight:500;margin-bottom:6px}
+form.ea input,form.ea select{width:100%;font:15px var(--f-body);padding:11px 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--bg);color:var(--ink)}
+form.ea input:focus,form.ea select:focus{outline:2px solid var(--brand);outline-offset:0;border-color:var(--brand)}
+.form-msg{font-size:14.5px;min-height:1.4em}
+.form-msg.ok{color:var(--good);font-weight:500}
+.form-msg.err{color:var(--bad)}
+
+/* privacy */
+.trust{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px}
+@media (max-width:860px){.trust{grid-template-columns:minmax(0,1fr)}}
+.trust > div{display:grid;grid-template-columns:40px minmax(0,1fr);gap:14px}
+.trust .ic{width:40px;height:40px;border-radius:10px;background:var(--brand-soft);color:var(--brand);display:grid;place-items:center}
+.trust h3{font:600 17px var(--f-body);letter-spacing:0;margin-bottom:4px}
+.trust p{color:var(--muted);font-size:15px}
+
+/* faq */
+.faq{max-width:820px;border-top:1px solid var(--line)}
+.faq details{border-bottom:1px solid var(--line)}
+.faq summary{cursor:pointer;list-style:none;padding:20px 40px 20px 0;font:600 18px var(--f-body);position:relative}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";position:absolute;right:6px;top:16px;font:400 26px var(--f-body);color:var(--brand);transition:transform .15s}
+.faq details[open] summary::after{transform:rotate(45deg)}
+.faq details p{color:var(--muted);padding:0 0 20px;max-width:68ch}
+
+/* final cta */
+.final{text-align:center;padding:64px 24px;background:var(--brand-soft);border-radius:18px}
+.final h2{font-size:clamp(30px,4vw,48px);font-weight:800;line-height:1.05}
+.final p{color:var(--muted);font-size:18px;margin:14px auto 26px;max-width:36em}
+.final .cta-row{justify-content:center}
+</style>
 </head>
 <body>
-<header class="top">
+
+<header class="nav">
   <div class="wrap">
-    <div class="brand">
-      <div class="tag">Prototype · v0.1 · <a class="back" href="https://mrudula-portfolio-theta.vercel.app/">by Mrudula ↗</a></div>
-      <h1>DriftLine</h1>
-      <p>Upload a P&amp;L and balance sheet with several years of history. DriftLine finds where costs have drifted against revenue and sizes what reverting them is worth.</p>
-    </div>
-    <nav class="tabs" role="tablist">
-      <button role="tab" id="tab-diag" aria-selected="true" data-panel="p-diag">Diagnostic</button>
-      <button role="tab" id="tab-review" aria-selected="false" data-panel="p-review">Partner review</button>
-      <button role="tab" id="tab-road" aria-selected="false" data-panel="p-road">Roadmap</button>
+    <a class="logo" href="/" aria-label="DriftLine home">
+      <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="var(--brand)"/><path d="M5.5 19.5h17" stroke="var(--on-brand)" stroke-opacity=".5" stroke-width="1.8" stroke-dasharray="2 2.4"/><path d="M5.5 19.5C11 19.5 13 15.5 16 13.5S20 9.5 22 8.5" fill="none" stroke="var(--on-brand)" stroke-width="2.2" stroke-linecap="round"/><circle cx="22" cy="8.5" r="2.7" fill="var(--drift)"/></svg>
+      DriftLine
+    </a>
+    <nav class="nav-links" aria-label="Main">
+      <a class="hide-sm" href="#how">How it works</a>
+      <a class="hide-sm" href="#pricing">Pricing</a>
+      <a class="hide-sm" href="#faq">FAQ</a>
+      <a class="btn primary sm" href="/app">Try it free</a>
     </nav>
   </div>
 </header>
 
-<main class="wrap">
-<!-- ================= DIAGNOSTIC ================= -->
-<section id="p-diag" role="tabpanel">
-  <div class="grid-main">
-    <div class="stack">
-      <div class="panel">
-        <div class="row" style="justify-content:space-between">
-          <div><h2>1 · Load statements</h2>
-          <p class="lede" style="margin:0">One row per line item, one column per financial year, oldest to newest. CSV, tab-separated, or an Excel sheet.</p></div>
-          <span class="example-flag" id="exampleFlag">Example data loaded</span>
-        </div>
-        <div class="inputs" style="margin-top:14px">
-          <div>
-            <label for="plText">Profit &amp; loss</label>
-            <textarea id="plText" spellcheck="false"></textarea>
-            <div class="row" style="margin-top:8px">
-              <span class="btn filebtn">Upload P&amp;L file<input type="file" id="plFile" accept=".csv,.tsv,.txt,.xlsx,.xls"></span>
-            </div>
-          </div>
-          <div>
-            <label for="bsText">Balance sheet</label>
-            <textarea id="bsText" spellcheck="false"></textarea>
-            <div class="row" style="margin-top:8px">
-              <span class="btn filebtn">Upload balance sheet file<input type="file" id="bsFile" accept=".csv,.tsv,.txt,.xlsx,.xls"></span>
-            </div>
-          </div>
-        </div>
-        <div class="row" style="margin-top:14px">
-          <button class="btn primary" id="runBtn">Run diagnostic</button>
-          <button class="btn" id="sampleBtn">Reload example</button>
-          <label class="unit" for="unitIn">Units <input id="unitIn" type="text" value="₹ Cr"></label>
-          <span class="err" id="errMsg" role="alert"></span>
-        </div>
-        <p class="hint" style="margin:10px 0 0">The example is a fictional mid-size manufacturer (FY22–FY25). Line items are matched by name, so Indian Schedule III labels, US GAAP labels and plain-English labels all work. Unmatched items are still analysed under their own name.</p>
+<main>
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <div class="eyebrow">Cost diagnostic for Indian MSMEs</div>
+      <h1>Find the costs that <em>crept up</em> while revenue grew.</h1>
+      <p class="lede">Upload your P&amp;L and balance sheet. DriftLine shows which cost lines have drifted against revenue, what bringing them back is worth, and how much cash is stuck in stock and unpaid invoices.</p>
+      <div class="cta-row">
+        <a class="btn primary lg" href="/app">Run a free diagnostic</a>
+        <a class="btn lg" href="/app#sample">See a sample report</a>
       </div>
-
-      <div id="results" class="stack"></div>
+      <ul class="checks">
+        <li><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>No sign-up</li>
+        <li><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Excel or CSV, Schedule III labels</li>
+        <li><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Analysed on your device</li>
+      </ul>
     </div>
 
-    <aside class="panel chat" aria-label="Plop, the DriftLine analyst">
-      <div class="chat-head">
-        <div class="eyebrow">Ask Plop</div>
-        <h3 style="margin:2px 0 0">Questions on these numbers</h3>
+    <div class="report" role="img" aria-label="Sample DriftLine report: EBITDA margin fell from 17.5% to 12.1%; four cost lines have drifted, led by materials at 25 crore rupees a year.">
+      <div class="report-head"><span><b>Sample report</b> · fictional manufacturer, FY22–FY25</span><span class="tag">Example</span></div>
+      <div class="kpis">
+        <div class="kpi"><div class="k">EBITDA margin</div><div class="v num">12.1%</div><div class="d">down from 17.5% in FY22</div></div>
+        <div class="kpi"><div class="k">Cost drift vs best year</div><div class="v num">₹56.6 Cr <small>/ yr</small></div><div class="d" style="color:var(--muted)">5.6% of revenue</div></div>
       </div>
-      <div class="chat-log" id="chatLog" aria-live="polite"></div>
-      <div class="chips" id="chatChips"></div>
-      <div class="chat-note" id="chatNote">Plop answers with Google Gemini, using only the figures loaded here. Your figures are sent to Gemini when you ask, so use the example or anonymised numbers on this demo.</div>
-      <form id="chatForm">
-        <input type="text" id="chatIn" placeholder="e.g. Why did EBITDA margin fall?" autocomplete="off">
-        <button class="btn primary" id="chatSend" type="submit">Ask</button>
-        <button class="btn" id="chatStop" type="button" hidden>Stop</button>
-      </form>
-    </aside>
+      <div class="rows">
+        <div class="row head"><span>Cost line</span><span class="ratio">% of rev</span><span class="barcell"></span><span class="gap">Gap</span></div>
+        <div class="row"><span class="name">Materials consumed</span><span class="ratio">60.0→62.5</span><span class="barcell"><span class="bar"><i style="width:100%"></i></span></span><span class="gap">25.0</span></div>
+        <div class="row"><span class="name">Employee benefits</span><span class="ratio">8.8→9.6</span><span class="barcell"><span class="bar"><i style="width:31%"></i></span></span><span class="gap">7.7</span></div>
+        <div class="row"><span class="name">Power and fuel</span><span class="ratio">4.0→4.7</span><span class="barcell"><span class="bar"><i style="width:25%"></i></span></span><span class="gap">6.4</span></div>
+        <div class="row"><span class="name">Freight</span><span class="ratio">3.1→3.7</span><span class="barcell"><span class="bar"><i style="width:25%"></i></span></span><span class="gap">6.2</span></div>
+      </div>
+      <div class="plop-bubble"><span class="avatar" aria-hidden="true">P</span><div><div class="who">Plop · your analyst</div>Freight grew 14% a year while revenue grew 7.2%. Before renegotiating rates, check whether you're shipping further or in smaller loads.</div></div>
+    </div>
   </div>
 </section>
 
-<!-- ================= PARTNER REVIEW ================= -->
-<section id="p-review" role="tabpanel" hidden>
-  <div class="stack">
-    <div>
-      <div class="eyebrow">Partner review · product concept</div>
-      <h2>Is a cost-cutting tool built on annual statements a business?</h2>
-      <p class="lede">A deliberately skeptical read of the concept, written the way a steering committee would hear it. The prototype in the Diagnostic tab exists to test these points, not to argue past them.</p>
+<!-- PROBLEM -->
+<section class="block">
+  <div class="wrap problem">
+    <div class="copy">
+      <div class="eyebrow">Why it matters</div>
+      <div class="sec-head" style="margin:10px 0 0"><h2>Growth hides cost creep.</h2></div>
+      <p>When sales rise every year, a cost line rising twice as fast still looks normal in the books. Nobody flags it, because the rupee amount grew for everyone.</p>
+      <p>In our sample manufacturer, revenue grew <strong>7.2% a year</strong>. Freight grew <strong>14%</strong> and power <strong>12.5%</strong>. Along with materials and staff costs, that drift took <strong>5.4 points</strong> off EBITDA margin in three years.</p>
+      <p>DriftLine measures every cost line against revenue, year by year, so the creep is visible the day you upload.</p>
     </div>
+    <figure class="chart-card" style="margin:0">
+      <div class="cap"><span>Growth since FY22, indexed to 100</span><span>Sample company</span></div>
+      <svg viewBox="0 0 520 260" role="img" aria-label="Indexed growth from FY22 to FY25: revenue rose to 123, power to 142, freight to 148.">
+        <g stroke="var(--line)" stroke-width="1">
+          <line x1="44" x2="430" y1="220" y2="220"/><line x1="44" x2="430" y1="167" y2="167"/><line x1="44" x2="430" y1="113" y2="113"/><line x1="44" x2="430" y1="60" y2="60"/>
+        </g>
+        <text x="36" y="224" text-anchor="end">100</text><text x="36" y="171" text-anchor="end">115</text><text x="36" y="117" text-anchor="end">130</text><text x="36" y="64" text-anchor="end">145</text>
+        <text x="60" y="244" text-anchor="middle">FY22</text><text x="180" y="244" text-anchor="middle">FY23</text><text x="300" y="244" text-anchor="middle">FY24</text><text x="420" y="244" text-anchor="middle">FY25</text>
+        <!-- y = 220 - (v-100)*3.5667 -->
+        <polyline fill="none" stroke="var(--brand)" stroke-width="3" stroke-linejoin="round" points="60,220 180,183 300,159 420,137"/>
+        <polyline fill="none" stroke="var(--drift)" stroke-width="2.4" stroke-dasharray="1 0" stroke-linejoin="round" opacity=".55" points="60,220 180,166 300,112 420,69"/>
+        <polyline fill="none" stroke="var(--drift)" stroke-width="3" stroke-linejoin="round" points="60,220 180,163 300,106 420,49"/>
+        <g><circle cx="420" cy="137" r="4.5" fill="var(--brand)"/><circle cx="420" cy="69" r="4" fill="var(--drift)" opacity=".7"/><circle cx="420" cy="49" r="4.5" fill="var(--drift)"/></g>
+        <text x="432" y="53" style="fill:var(--drift);font-weight:500">Freight 148</text>
+        <text x="432" y="80" style="fill:var(--drift);opacity:.8">Power 142</text>
+        <text x="432" y="141" style="fill:var(--brand);font-weight:500">Revenue 123</text>
+      </svg>
+    </figure>
+  </div>
+</section>
 
-    <div class="verdict">
-      <h3>Verdict</h3>
-      <p>The concept as stated has a structural flaw: <strong>a P&amp;L and balance sheet can tell you where to look, but almost never what to do.</strong> "Other expenses rose from 2.2% to 2.6% of revenue" is a real signal; "cut travel by renegotiating your top three vendors" requires vendor-level spend data that annual statements do not contain. If you promise the second and deliver the first, CFOs will churn after the first report because they already know their ratios.</p>
-      <p style="margin-bottom:0">The idea becomes viable if you reposition it: annual statements are the <em>free entry diagnostic</em> (fast, no integration, good for lead generation), and the paid product connects to the accounting system for ledger- and vendor-level data, adds peer benchmarks, and tracks whether savings are actually realised. The rest of this page explains why.</p>
+<!-- HOW -->
+<section class="block" id="how">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow">How it works</div>
+      <h2>From statements to a cost diagnosis in three steps.</h2>
     </div>
-
-    <div class="qgrid">
-      <div class="qcard">
-        <div class="eyebrow">Questions I would ask you</div>
-        <h3>Customer and value</h3>
-        <ol>
-          <li><strong>Who exactly is the buyer?</strong> A CFO of a ₹500 Cr company has a finance team that already computes these ratios. An MSME owner lacks the analysis but has low willingness to pay. These are different products.</li>
-          <li><strong>What decision does the user make the day after reading the report?</strong> If you can't name one, the report is interesting, not valuable.</li>
-          <li><strong>Why would they not upload the same statements into a general AI assistant?</strong> That is now free and good enough for ratio commentary. Your moat cannot be the commentary.</li>
-          <li><strong>How will you prove savings were realised?</strong> Without measurement you are selling opinions, and you cannot price on outcomes.</li>
-        </ol>
-      </div>
-      <div class="qcard">
-        <div class="eyebrow">Questions I would ask you</div>
-        <h3>Data and method</h3>
-        <ol>
-          <li><strong>What is your benchmark source?</strong> "Your power cost is high" needs a peer set by industry and size. In India that means MCA filings or licensed databases (e.g. CMIE Prowess). Building that is a real moat; skipping it leaves only self-comparison.</li>
-          <li><strong>How will you separate inefficiency from price and mix?</strong> A material cost ratio rising from 60% to 62.5% might be commodity inflation the company could not control, a shift to a lower-margin product, or genuine waste. Statements alone cannot tell these apart.</li>
-          <li><strong>How will you get clean data in?</strong> Real statements arrive as scanned PDFs with notes, regroupings and restatements. Extraction and line-item mapping is most of the engineering effort, not the analytics.</li>
-          <li><strong>Three to five annual data points is a small sample.</strong> How do you avoid presenting noise or one-off items as trends?</li>
-        </ol>
-      </div>
+    <div class="steps">
+      <div class="step"><div class="n">Step 1</div><h3>Upload two statements</h3><p>Your P&amp;L and balance sheet for three or more years, as Excel or CSV. Schedule III, GAAP and plain-English line names are recognised automatically.</p></div>
+      <div class="step"><div class="n">Step 2</div><h3>See where costs drifted</h3><p>Each cost line is compared with its best year as a share of revenue. You see the gap in rupees, and choose how much of it you think is realistic to recover.</p></div>
+      <div class="step"><div class="n">Step 3</div><h3>Know what to check next</h3><p>Every finding lists what the statements can't show, the records to pull, and the usual fixes. Ask Plop, the built-in analyst, anything about your numbers.</p></div>
     </div>
+  </div>
+</section>
 
-    <div class="panel">
-      <h3>Facts, assumptions and judgments in the concept</h3>
-      <div class="tbl-wrap">
-      <table class="ftable">
-        <thead><tr><th>Type</th><th>Statement</th></tr></thead>
-        <tbody>
-          <tr><td>Fact</td><td>Annual statements show cost by nature (materials, employee, power) at an aggregated level. They do not show vendors, contracts, units consumed or prices paid.</td></tr>
-          <tr><td>Fact</td><td>Cost ratios and working-capital days can be computed reliably from them, and changes over time are visible.</td></tr>
-          <tr><td>Assumption</td><td>That companies lack this analysis today. Likely true for small firms, likely false for mid-size firms with a finance team or a retained CA.</td></tr>
-          <tr><td>Assumption</td><td>That a company will act on a software-generated recommendation without a person to own it. Cost programmes usually fail on execution, not identification.</td></tr>
-          <tr><td>Assumption</td><td>That companies will upload confidential financials to a new vendor. Listed companies' statements are public anyway; private companies will ask hard security questions.</td></tr>
-          <tr><td>Inference</td><td>Because the input is coarse, specific "do X" recommendations from statements alone will often be generic. Quality rises sharply once ledger data is available.</td></tr>
-          <tr><td>Judgment</td><td>The defensible business is benchmarks + ledger integration + savings tracking, with statement upload as the entry point.</td></tr>
-        </tbody>
-      </table>
-      </div>
+<!-- FEATURES -->
+<section class="block">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow">What's in the report</div>
+      <h2>Answers a promoter can act on, not ratios for their own sake.</h2>
     </div>
-
-    <div class="qgrid">
-      <div class="qcard">
-        <div class="eyebrow">Steelman</div>
-        <h3>The strongest case for building it as you described</h3>
-        <p>Most small and mid-size companies never get a structured outside look at their cost base. A ten-minute, low-friction diagnostic that says "these four lines drifted, this is what it is worth, here are the questions to ask" is more than many of them get today. It needs no integration, works from documents they already file, and can be sold through chartered-accountant firms who serve thousands of clients. Being directionally right on where to look is useful even if the "how" stays with the client.</p>
-      </div>
-      <div class="qcard">
-        <div class="eyebrow">What you are missing</div>
-        <h3>Risks and blind spots</h3>
-        <ul>
-          <li><strong>Cutting the wrong cost.</strong> Marketing, R&amp;D and maintenance cuts improve this year's margin and damage next year's revenue or asset life. The tool must say when not to cut.</li>
-          <li><strong>Revenue is usually the bigger lever.</strong> A one-point price increase often beats a year of cost work. A pure cost tool ignores pricing and mix.</li>
-          <li><strong>Liability.</strong> A wrong recommendation that leads to layoffs or supplier loss is a reputational risk. Frame output as diagnosis, not advice.</li>
-          <li><strong>Existing players.</strong> FP&amp;A tools (for example Fathom, Spotlight Reporting, Datarails, Cube), accounting suites with analytics, and CA firms already sit in this workflow. Distribution may matter more than features.</li>
-        </ul>
-      </div>
+    <div class="features">
+      <article class="feature">
+        <div><h3>Cost drift, line by line</h3><p>Materials, staff, power, freight, repairs, rent and more, each measured against your own best year. Ranked by rupee impact so the big ones come first.</p></div>
+        <div class="viz">
+          <div class="days">
+            <span class="lbl">Materials</span><span class="track"><i class="best" style="left:0;width:60%"></i><i class="now" style="left:60%;width:2.5%"></i></span><span class="val">₹25.0 Cr</span>
+            <span class="lbl">Freight</span><span class="track"><i class="best" style="left:0;width:30.5%"></i><i class="now" style="left:30.5%;width:6.1%"></i></span><span class="val">₹6.2 Cr</span>
+          </div>
+        </div>
+      </article>
+      <article class="feature">
+        <div><h3>Savings you set, not savings we promise</h3><p>Some cost rise is inflation you can't control. Slide the capture rate to what you believe is achievable, and every figure updates.</p></div>
+        <div class="viz slider-viz" aria-hidden="true">
+          <div class="lineup"><span>Assumed capture</span><span>50%</span></div>
+          <div class="rail"><i></i><b></b></div>
+          <div class="out num">₹28.3 Cr <small>a year, 2.8 points of margin · sample</small></div>
+        </div>
+      </article>
+      <article class="feature">
+        <div><h3>Cash stuck in working capital</h3><p>Inventory, receivable and payable days compared with your best year, turned into cash you could release and the interest you'd stop paying.</p></div>
+        <div class="viz">
+          <div class="days">
+            <span class="lbl">Inventory</span><span class="track"><i class="best" style="left:0;width:72%"></i><i class="now" style="left:72%;width:14%"></i></span><span class="val">88 → 105 days</span>
+            <span class="lbl">Receivables</span><span class="track"><i class="best" style="left:0;width:41%"></i><i class="now" style="left:41%;width:7.5%"></i></span><span class="val">50 → 59 days</span>
+          </div>
+        </div>
+      </article>
+      <article class="feature">
+        <div><h3>Plop, an analyst who only uses your numbers</h3><p>Ask why margins fell or where to start. Plop answers from your statements, says when they can't answer something, and tells you which records would.</p></div>
+        <div class="viz chat-viz" aria-hidden="true">
+          <div class="q">Which saving should we start with?</div>
+          <div class="a">Materials is the largest gap at ₹25 Cr, but first separate price from volume. Pull the purchase register by supplier for three years.</div>
+        </div>
+      </article>
     </div>
+  </div>
+</section>
 
+<!-- LIMITS -->
+<section class="block">
+  <div class="wrap">
     <div class="limits">
-      <h3>How the prototype handles these critiques</h3>
+      <div>
+        <div class="eyebrow">Straight talk</div>
+        <h2 style="margin-top:10px">What annual statements can't tell you, and what we do about it.</h2>
+        <p>Plenty of tools turn ratios into confident advice. DriftLine tells you where to look, and is honest about what the numbers alone can't prove.</p>
+      </div>
       <ul>
-        <li>It sizes savings against the company's <strong>own best year</strong>, not an invented benchmark, and lets you set the capture rate instead of assuming 100%.</li>
-        <li>Every insight separates what the numbers show from what they cannot show, and lists the data to pull next.</li>
-        <li>Working capital is reported as <strong>cash release</strong>, with only the interest saving counted as P&amp;L impact.</li>
-        <li>Depreciation, finance cost and tax are excluded from "controllable" savings.</li>
+        <li><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 5v5M9 12.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span><b>Price versus volume.</b> A rising material cost could be commodity prices, product mix or waste. We list the records that separate them.</span></li>
+        <li><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 5v5M9 12.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span><b>Vendors and contracts.</b> Statements show totals, not suppliers. Renegotiation needs your purchase data.</span></li>
+        <li><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 5v5M9 12.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span><b>Costs you shouldn't cut.</b> Marketing, maintenance and people come with a warning, because cutting them can cost next year's revenue.</span></li>
+        <li><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 5v5M9 12.6v.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span><b>Your peers.</b> Today we compare you with your own best year. Industry benchmarks are on the way for Pro.</span></li>
       </ul>
     </div>
   </div>
 </section>
 
-<!-- ================= ROADMAP ================= -->
-<section id="p-road" role="tabpanel" hidden>
-  <div class="stack">
-    <div>
-      <div class="eyebrow">Roadmap · 18 months</div>
-      <h2>Validate first, then earn the right to deeper data</h2>
-      <p class="lede">Each phase has a test it must pass before the next one is funded. The order matters: building ledger integrations before you know which insights drive action is the most likely way to waste the first year.</p>
+<!-- AUDIENCE -->
+<section class="block" id="ca">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow">Who it's for</div>
+      <h2>Built for the people who sign off the costs.</h2>
     </div>
-    <div class="phases">
-      <div class="phase">
-        <div class="when">Weeks 0–6</div>
-        <h3>Phase 0 · Validate the problem</h3>
-        <div class="phase-body">
-          <div><h4>Build</h4><ul><li>This prototype, plus a manual "concierge" diagnostic run by a person for 10–15 companies</li><li>15–20 interviews: CFOs, MSME owners, CA partners</li></ul></div>
-          <div><h4>Learn</h4><ul><li>Which buyer feels the pain most and will pay</li><li>Which insights led to an actual action within 30 days</li><li>Whether CA firms want it as a client-service tool</li></ul></div>
-          <div><h4>Pass / kill</h4><ul><li>Pass: ≥ 5 of 15 companies act on a finding and ≥ 3 say they would pay</li><li class="kill">Kill or pivot: reports are called "interesting" but nobody acts</li></ul></div>
-        </div>
+    <div class="audience">
+      <div class="aud"><h3>Owners and promoters</h3><p>You know the business, but rarely see costs laid out against revenue year after year.</p><div class="use">Use it before your annual budget, or when margins slip and nobody can say why.</div></div>
+      <div class="aud"><h3>Finance heads</h3><p>Skip the spreadsheet work and get a ranked view of where margin went, ready to take to the board.</p><div class="use">Use it to prioritise a cost review and decide which data to pull first.</div></div>
+      <div class="aud ca"><h3>CA and advisory firms</h3><p>Offer every client a structured cost review alongside the audit, without extra analyst hours.</p><div class="use">The CA Partner plan adds multiple clients and reports with your firm's name.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="block" id="pricing">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow">Pricing</div>
+      <h2>Free to diagnose. Pay when you want to track.</h2>
+      <p>The diagnostic is free and stays free. Pro and CA Partner are in early access while we build them with our first users.</p>
+    </div>
+    <div class="plans">
+      <div class="plan">
+        <div><h3>Diagnostic</h3><p class="for">For a one-off look at your cost base</p></div>
+        <div><div class="price num">₹0</div><div class="price-note">Free, no sign-up</div></div>
+        <ul>
+          <li><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Cost drift report for any company</li>
+          <li><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Working-capital cash and interest</li>
+          <li><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Next steps for every finding</li>
+          <li><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Questions to Plop, within a fair-use limit</li>
+        </ul>
+        <a class="btn" href="/app">Run a free diagnostic</a>
       </div>
-      <div class="phase">
-        <div class="when">Months 2–4</div>
-        <h3>Phase 1 · Statement diagnostic MVP</h3>
-        <div class="phase-body">
-          <div><h4>Build</h4><ul><li>PDF and Excel extraction for Schedule III and common formats, with a human review step</li><li>Line-item mapping, ratio engine, own-history sizing, chat grounded in the data</li><li>Security basics: encryption, deletion on request, no training on client data</li></ul></div>
-          <div><h4>Learn</h4><ul><li>Extraction accuracy on real statements</li><li>Time from upload to report</li><li>Conversion from free diagnostic to a sales call</li></ul></div>
-          <div><h4>Metrics</h4><ul><li>≥ 95% line-item mapping accuracy after review</li><li>Report in under 10 minutes</li><li>≥ 10% of free users request the deeper product</li></ul></div>
-        </div>
+      <div class="plan featured">
+        <span class="badge">Early access</span>
+        <div><h3>Pro</h3><p class="for">For companies that want to track costs every month</p></div>
+        <div><div class="price num">₹19,999<small> / year</small></div><div class="price-note">Per company, or ₹1,999 a month. Excludes GST.</div></div>
+        <ul>
+          <li><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Everything in Diagnostic</li>
+          <li class="soon"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Monthly tracking from Tally and Zoho Books<span class="soon-chip">Soon</span></span></li>
+          <li class="soon"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Industry peer benchmarks<span class="soon-chip">Soon</span></span></li>
+          <li class="soon"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Saved reports and year-on-year comparison<span class="soon-chip">Soon</span></span></li>
+          <li class="soon"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>PDF report for your bank or board<span class="soon-chip">Soon</span></span></li>
+        </ul>
+        <a class="btn primary" href="#early-access" data-plan="Pro">Join early access</a>
       </div>
-      <div class="phase">
-        <div class="when">Months 4–9</div>
-        <h3>Phase 2 · Benchmarks and ledger data</h3>
-        <div class="phase-body">
-          <div><h4>Build</h4><ul><li>Peer benchmark set by industry and revenue band (MCA filings, licensed databases)</li><li>Connectors to accounting systems common with your buyers (Tally, Zoho Books, SAP B1)</li><li>Vendor spend cube: spend by vendor, category and month</li></ul></div>
-          <div><h4>Learn</h4><ul><li>Whether peer gaps change recommendations versus own-history gaps</li><li>Which spend categories have the largest addressable gap</li></ul></div>
-          <div><h4>Metrics</h4><ul><li>Recommendations name a vendor or contract, not just a line item</li><li>Paid pilots with ≥ 10 companies</li></ul></div>
-        </div>
-      </div>
-      <div class="phase">
-        <div class="when">Months 9–18</div>
-        <h3>Phase 3 · From insight to realised savings</h3>
-        <div class="phase-body">
-          <div><h4>Build</h4><ul><li>Initiative tracker: owner, target, due date per saving</li><li>Monthly realised-savings measurement against baseline, adjusted for volume and price</li><li>Lever library by category; pricing and mix analysis on the revenue side</li><li>White-label edition for CA and advisory firms</li></ul></div>
-          <div><h4>Learn</h4><ul><li>Identified-to-realised savings conversion</li><li>Whether outcome-based pricing is viable</li></ul></div>
-          <div><h4>Metrics</h4><ul><li>≥ 40% of identified savings realised within 12 months</li><li>Net revenue retention above 100%</li></ul></div>
-        </div>
-      </div>
-      <div class="phase" style="padding-bottom:0">
-        <div class="when">Beyond 18 months</div>
-        <h3>Phase 4 · Planning layer</h3>
-        <div class="phase-body">
-          <div><h4>Build</h4><ul><li>Rolling forecast and scenario planning (commodity, wage, FX shocks)</li><li>Alerts when a cost line drifts month on month</li></ul></div>
-          <div><h4>Why later</h4><ul><li>Planning is a crowded FP&amp;A market. Enter it only with proprietary benchmark and savings data competitors lack.</li></ul></div>
-          <div><h4>Risk</h4><ul><li>Feature sprawl that dilutes the cost wedge before it has proven retention</li></ul></div>
-        </div>
+      <div class="plan">
+        <div><h3>CA Partner</h3><p class="for">For firms advising many MSME clients</p></div>
+        <div><div class="price num">₹9,999<small> / month</small></div><div class="price-note">Up to 25 client companies. Excludes GST.</div></div>
+        <ul>
+          <li><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Everything in Pro, for each client</li>
+          <li class="soon"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Reports carrying your firm's name<span class="soon-chip">Soon</span></span></li>
+          <li class="soon"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>One dashboard across all clients<span class="soon-chip">Soon</span></span></li>
+          <li class="soon"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Priority support and onboarding<span class="soon-chip">Soon</span></span></li>
+        </ul>
+        <a class="btn" href="#early-access" data-plan="CA Partner">Join early access</a>
       </div>
     </div>
-    <div class="limits">
-      <h3>Most likely way this fails</h3>
-      <p style="margin:6px 0 0">The team spends nine months perfecting PDF extraction and charts, ships a polished report, and discovers that buyers already knew their ratios and wanted someone to negotiate with suppliers. Phase 0 exists to find that out in six weeks instead.</p>
+    <p class="fine">Early-access members get launch pricing locked for the first year. We'll contact you before anything is charged.</p>
+  </div>
+</section>
+
+<!-- EARLY ACCESS -->
+<section class="block" id="early-access">
+  <div class="wrap">
+    <div class="early">
+      <div class="copy">
+        <div class="eyebrow">Early access</div>
+        <h2 style="margin-top:10px">Help shape Pro and CA Partner.</h2>
+        <p>We're building monthly tracking, benchmarks and multi-client reports with a small group of companies and CA firms. Join and we'll get in touch.</p>
+        <p>No payment now. We'll only use your email for DriftLine.</p>
+      </div>
+      <form class="ea" id="eaForm" novalidate>
+        <div><label for="eaName">Name</label><input id="eaName" name="name" autocomplete="name" required></div>
+        <div><label for="eaEmail">Work email</label><input id="eaEmail" name="email" type="email" autocomplete="email" required></div>
+        <div><label for="eaRole">You are</label>
+          <select id="eaRole" name="role"><option>Owner or promoter</option><option>Finance head</option><option>CA or advisor</option><option>Other</option></select></div>
+        <div><label for="eaSize">Company revenue</label>
+          <select id="eaSize" name="size"><option>Under ₹10 Cr</option><option selected>₹10–100 Cr</option><option>₹100–500 Cr</option><option>Over ₹500 Cr</option><option>Not applicable</option></select></div>
+        <div class="full"><label for="eaPlan">Interested in</label>
+          <select id="eaPlan" name="plan"><option>Pro</option><option>CA Partner</option><option>Not sure yet</option></select></div>
+        <div class="full" style="display:flex;flex-wrap:wrap;align-items:center;gap:14px">
+          <button class="btn primary" type="submit" id="eaBtn">Request early access</button>
+          <span class="form-msg" id="eaMsg" role="status"></span>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- TRUST -->
+<section class="block">
+  <div class="wrap">
+    <div class="sec-head"><div class="eyebrow">Your data</div><h2>Your statements stay with you.</h2></div>
+    <div class="trust">
+      <div><span class="ic"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7 17h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><div><h3>Analysed on your device</h3><p>The diagnostic runs in your browser. Your files are not uploaded to our servers.</p></div></div>
+      <div><span class="ic"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 9V7a6 6 0 0112 0v2" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="9" width="14" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></span><div><h3>Nothing stored</h3><p>Close the tab and the figures are gone. There's no account and no database of your numbers.</p></div></div>
+      <div><span class="ic"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 5h12v8H9l-4 3v-3H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span><div><h3>Plop is opt-in</h3><p>Only when you ask Plop a question are summarised figures sent to Google Gemini to answer it.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="block" id="faq">
+  <div class="wrap">
+    <div class="sec-head"><div class="eyebrow">FAQ</div><h2>Questions owners ask us.</h2></div>
+    <div class="faq">
+      <details><summary>What format do my statements need to be in?</summary><p>One row per line item and one column per financial year, as an Excel sheet or CSV. Labels from Schedule III statements, US GAAP or plain English are recognised. You can also paste the numbers directly. Three or more years gives the most reliable picture.</p></details>
+      <details><summary>What does "gap to best year" mean?</summary><p>For each cost, we find the year it was lowest as a share of revenue. The gap is what you'd save today if it were back at that share. It's a ceiling, not a forecast, which is why you set how much of it you think is achievable.</p></details>
+      <details><summary>Does this replace my CA?</summary><p>No. DriftLine shows where costs have drifted and what to check. Your CA or finance team brings the context: one-off items, contracts and decisions behind the numbers. Many firms use it to start that conversation.</p></details>
+      <details><summary>Can I trust the numbers?</summary><p>The calculations are simple and shown on screen, so you can check any figure against your statements. The limits are in the data: annual statements can't separate price from volume, so every finding tells you which records would confirm it.</p></details>
+      <details><summary>When will Pro be available?</summary><p>Pro and CA Partner are in early access. Join the list and we'll contact you as features open, with launch pricing locked for your first year.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL -->
+<section class="block">
+  <div class="wrap">
+    <div class="final">
+      <h2>See where your margin went.</h2>
+      <p>Bring three years of statements. Leave with a ranked list of costs to look at, and what to check first.</p>
+      <div class="cta-row"><a class="btn primary lg" href="/app">Run a free diagnostic</a><a class="btn lg" href="/app#sample">See a sample report</a></div>
     </div>
   </div>
 </section>
 </main>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script>
-/* ===================== Example data (fictional) ===================== */
-const SAMPLE_PL = `Line item,FY22,FY23,FY24,FY25
-Revenue from operations,820,905,960,1010
-Other income,12,14,11,13
-Cost of materials consumed,492,552,595,631
-Employee benefits expense,74,80,88,97
-Power and fuel,33,38,43,47
-Freight and forwarding,25,29,33,37
-Advertising and sales promotion,12,14,15,15
-Repairs and maintenance,9,10,12,14
-Rent,6,6.5,7,7.5
-Travel and conveyance,4,5.5,6.5,7.2
-Legal and professional fees,3.5,4,5.2,6.1
-Other expenses,18,20,23,26
-Depreciation and amortisation,22,24,27,30
-Finance costs,14,16,19,22
-Tax expense,30,30,24.5,21`;
-const SAMPLE_BS = `Line item,FY22,FY23,FY24,FY25
-Property plant and equipment,330,360,395,430
-Inventories,118,138,160,182
-Trade receivables,112,128,145,162
-Cash and cash equivalents,28,22,18,15
-Total assets,640,720,800,880
-Total equity,410,470,516,568
-Borrowings,120,150,180,210
-Trade payables,82,88,92,95`;
-
-/* ===================== Lever library ===================== */
-const CATS = {
-  materials:{name:"Materials / COGS", ctrl:true, risk:"",
-    cannot:"Whether the rise is price (commodity inflation), volume mix (a shift to lower-margin products), or waste (yield, scrap, over-spec). Statements show only the total.",
-    pull:["Purchase register by supplier and material for the last 3 years","Consumption per unit of output (kg per unit, scrap %)","Commodity index for key inputs over the same period","Price changes passed to customers"],
-    levers:["Should-cost models for top 10 materials; renegotiate with the evidence","Index-linked contracts so savings follow when commodity prices fall","Yield and scrap programme on the line with the highest loss","Specification review (value engineering) on high-spend items","Price pass-through clauses in customer contracts"]},
-  employee:{name:"Employee cost", ctrl:true, risk:"Headcount cuts carry morale, attrition and capability risk. Look at productivity and structure before numbers.",
-    cannot:"Whether the rise is wage inflation, headcount growth, overtime, or one-off items like gratuity revaluation.",
-    pull:["Headcount by function and month, permanent vs contract","Average cost per head, overtime hours","Output per employee by plant or team"],
-    levers:["Spans-and-layers review of management levels","Overtime and contract-labour controls","Shift productivity improvements before adding people","Freeze on backfilling non-critical roles"]},
-  power:{name:"Power & fuel", ctrl:true, risk:"",
-    cannot:"Whether units consumed per unit of output rose or the tariff did.",
-    pull:["Monthly electricity units and tariff by site","Fuel consumption per tonne / unit produced","Contract demand vs actual maximum demand"],
-    levers:["Energy audit: compressed-air leaks, motors, lighting","Power-factor correction and contract-demand right-sizing","Open-access or captive renewable power purchase","Shift energy-heavy loads to cheaper time-of-day tariffs"]},
-  freight:{name:"Freight & logistics", ctrl:true, risk:"Cheaper freight that delays deliveries can cost customers.",
-    cannot:"Whether cost per tonne-km rose, or the company is shipping further / smaller loads / to new regions.",
-    pull:["Freight invoices by lane, transporter and load size","Truck utilisation (load factor)","Customer and depot geography changes"],
-    levers:["Re-tender top lanes","Load consolidation and minimum-order rules","Packaging density improvements","Depot / warehouse network review"]},
-  marketing:{name:"Marketing & promotion", ctrl:true, risk:"Cutting marketing improves margin this year and can cut revenue next year. Tie spend to measured return before cutting.",
-    cannot:"Which channels or schemes produced sales.",
-    pull:["Spend by channel and scheme","Sales response by region or scheme","Trade-scheme payouts vs volume achieved"],
-    levers:["Cut schemes with no measurable volume lift","Shift spend to channels with measured return","Tighten dealer-scheme eligibility rules"]},
-  repairs:{name:"Repairs & maintenance", ctrl:true, risk:"Rising repairs often signal ageing assets. Cutting them can cause breakdowns; the real question may be replacement capex.",
-    cannot:"Whether this is reactive breakdown spend, planned maintenance, or deferred capex showing up as repairs.",
-    pull:["Maintenance work orders: breakdown vs planned","Asset age and downtime by machine","Annual maintenance contract terms"],
-    levers:["Shift from breakdown to preventive maintenance","Renegotiate or consolidate maintenance contracts","Spares inventory optimisation","Replace assets where repair cost exceeds replacement payback"]},
-  rent:{name:"Rent & lease", ctrl:true, risk:"",
-    cannot:"Which premises, utilisation, or lease renewal dates.",
-    pull:["Lease register with area, rate and renewal dates","Utilisation per site"],
-    levers:["Consolidate under-used premises","Renegotiate at renewal using market rates"]},
-  travel:{name:"Travel", ctrl:true, risk:"",
-    cannot:"Who travels, why, and at what class or booking lead time.",
-    pull:["Travel spend by employee grade and purpose","Booking lead times"],
-    levers:["Travel policy by grade, advance booking rules","Replace internal travel with virtual meetings","Corporate rates with airlines and hotels"]},
-  professional:{name:"Professional fees", ctrl:true, risk:"Some of this may be one-off (litigation, a transaction). Remove one-offs before judging the trend.",
-    cannot:"Which advisers, what scope, and what was one-off.",
-    pull:["Fees by adviser and engagement","One-off vs recurring split"],
-    levers:["Consolidate advisers, agree rate cards","Scope review of recurring retainers","Bring routine work in-house where volume justifies"]},
-  other:{name:"Other / miscellaneous", ctrl:true, risk:"",
-    cannot:"Anything. 'Other expenses' bundles many accounts, and the real levers sit inside it.",
-    pull:["General ledger break-up of this line for 3 years","Top 20 vendors within it"],
-    levers:["Unbundle into categories first; the action depends on what is inside","Approval thresholds for discretionary spend","Zero-based review of the largest sub-accounts"]},
-  generic:{name:"Unclassified line", ctrl:true, risk:"",
-    cannot:"What drives this line. It did not match a known category.",
-    pull:["General ledger break-up of this line"],
-    levers:["Review the line's sub-accounts before choosing an action"]},
-  depreciation:{name:"Depreciation", ctrl:false},
-  finance:{name:"Finance cost", ctrl:false},
-};
-
-/* ===================== Parsing ===================== */
-function splitLine(line, delim){
-  if(delim==="\t") return line.split("\t");
-  const out=[]; let cur="", q=false;
-  for(let i=0;i<line.length;i++){const c=line[i];
-    if(c==='"'){ if(q&&line[i+1]==='"'){cur+='"';i++;} else q=!q; }
-    else if(c===delim&&!q){out.push(cur);cur="";}
-    else cur+=c;}
-  out.push(cur); return out;
-}
-function toNum(s){
-  if(s==null) return null; s=String(s).trim(); if(!s||s==="-"||s==="—") return 0;
-  let neg=false; if(/^\(.*\)$/.test(s)){neg=true;s=s.slice(1,-1);}
-  s=s.replace(/[,₹$€£\s]/g,""); const n=parseFloat(s); if(isNaN(n)) return null; return neg?-n:n;
-}
-function parseTable(text){
-  const lines=text.split(/\r?\n/).filter(l=>l.trim());
-  if(lines.length<2) return null;
-  const delim=lines[0].includes("\t")?"\t":(lines[0].includes(";")&&!lines[0].includes(",")?";":",");
-  const head=splitLine(lines[0],delim).map(s=>s.trim());
-  let years=head.slice(1).filter(Boolean);
-  let rows=[];
-  for(const l of lines.slice(1)){
-    const cells=splitLine(l,delim); const label=(cells[0]||"").trim(); if(!label) continue;
-    const vals=years.map((_,i)=>toNum(cells[i+1]));
-    if(vals.every(v=>v===null)) continue;
-    rows.push({label,vals:vals.map(v=>v??0)});
-  }
-  // reverse if newest-first
-  const yn=years.map(y=>{const m=String(y).match(/(\d{2,4})(?!.*\d)/);return m?parseInt(m[1].slice(-2)):NaN});
-  if(yn.length>1&&!isNaN(yn[0])&&!isNaN(yn[yn.length-1])&&yn[0]>yn[yn.length-1]){
-    years=years.slice().reverse(); rows=rows.map(r=>({label:r.label,vals:r.vals.slice().reverse()}));
-  }
-  return {years,rows};
-}
-const PL_SKIP=/total|profit|ebitda|\bpbt\b|\bpat\b|margin|earnings per|loss before|loss after|exceptional/i;
-const PL_MAP=[
-  ["otherIncome",/other income/i],
-  ["revenue",/revenue|net sales|^sales|turnover|income from operations/i],
-  ["tax",/\btax/i],
-  ["depreciation",/depreciation|amorti/i],
-  ["finance",/finance cost|interest|borrowing cost/i],
-  ["materials",/material|cost of goods|\bcogs\b|cost of sales|purchases? of stock|changes in inventor|cost of revenue/i],
-  ["employee",/employee|salar|wages|staff|personnel|payroll/i],
-  ["power",/power|fuel|electric|energy|utilit/i],
-  ["marketing",/advertis|marketing|promotion|brand/i],
-  ["travel",/travel|conveyance/i],
-  ["freight",/freight|forwarding|logistic|transport|carriage|distribution/i],
-  ["repairs",/repair|maintenance/i],
-  ["rent",/\brent|lease/i],
-  ["professional",/legal|professional|consult|audit/i],
-  ["other",/other expense|misc|general|administrative|sundry|other operating/i],
-];
-const BS_MAP=[
-  ["totalAssets",/total assets/i],
-  ["inventory",/inventor|stock in trade/i],
-  ["receivables",/receivable|debtors/i],
-  ["payables",/payable|creditors/i],
-  ["cash",/cash|bank balance/i],
-  ["borrowings",/borrowing|loan|debt/i],
-  ["equity",/equity|net worth|shareholders/i],
-  ["fixedAssets",/property|plant|fixed asset|\bppe\b/i],
-];
-function mapRows(tbl, map, skip){
-  const out={}, unmatched=[];
-  for(const r of tbl.rows){
-    const isTotal=/total/i.test(r.label);
-    let key=null;
-    for(const [k,re] of map){ if(re.test(r.label)){key=k;break;} }
-    if(skip && skip.test(r.label) && !(key==="revenue"&&/revenue from operations/i.test(r.label))) continue;
-    if(!key){ unmatched.push(r); continue; }
-    (out[key]=out[key]||[]).push({...r,isTotal});
-  }
-  const res={};
-  for(const k in out){
-    const tots=out[k].filter(x=>x.isTotal); const use=tots.length?[tots[0]]:out[k];
-    res[k]={labels:use.map(x=>x.label),vals:use[0].vals.map((_,i)=>use.reduce((s,x)=>s+(x.vals[i]||0),0))};
-  }
-  return {res,unmatched};
-}
-
-/* ===================== Analysis engine ===================== */
-const pct=(a,b)=>b?a/b*100:0;
-const cagr=(a,b,n)=>(a>0&&b>0&&n>0)?(Math.pow(b/a,1/n)-1)*100:null;
-function analyse(plText, bsText){
-  const pl=parseTable(plText); if(!pl) throw new Error("The P&L needs a header row of years and at least one line item.");
-  if(pl.years.length<2) throw new Error("Add at least two years of P&L. Three or more makes trends meaningful.");
-  const {res:P,unmatched}=mapRows(pl,PL_MAP,PL_SKIP);
-  if(!P.revenue) throw new Error("No revenue line found. Name it 'Revenue', 'Revenue from operations', 'Net sales' or 'Turnover'.");
-  const Y=pl.years, n=Y.length, L=n-1, rev=P.revenue.vals;
-  if(rev.some(v=>v<=0)) throw new Error("Revenue must be positive in every year.");
-  // cost lines
-  const lines=[];
-  const add=(key,cat,label,vals)=>{
-    const ratio=vals.map((v,i)=>pct(v,rev[i]));
-    let bestIdx=0; ratio.forEach((r,i)=>{if(r<ratio[bestIdx])bestIdx=i;});
-    const gapPct=Math.max(0,ratio[L]-ratio[bestIdx]);
-    const gap=gapPct/100*rev[L];
-    let ups=0; for(let i=1;i<n;i++) if(ratio[i]>ratio[i-1]+0.02) ups++;
-    const rising=ups===n-1&&n>=3;
-    const costC=cagr(vals[0],vals[L],L), revC=cagr(rev[0],rev[L],L);
-    const conf= gap<=0?"none": rising?"high": (ratio[L]>ratio[0]?"med":"low");
-    lines.push({key,cat,label,vals,ratio,bestIdx,gapPct,gap,costC,revC,conf,ctrl:CATS[cat].ctrl});
-  };
-  for(const k of ["materials","employee","power","freight","marketing","repairs","rent","travel","professional","other","depreciation","finance"]){
-    if(P[k]) add(k,k,P[k].labels.length>1?CATS[k].name:P[k].labels[0],P[k].vals);
-  }
-  unmatched.forEach((r,i)=>add("x"+i,"generic",r.label,r.vals));
-  const opexKeys=lines.filter(l=>l.ctrl);
-  const opex=Y.map((_,i)=>opexKeys.reduce((s,l)=>s+l.vals[i],0));
-  const dep=P.depreciation?P.depreciation.vals:Y.map(()=>0);
-  const fin=P.finance?P.finance.vals:Y.map(()=>0);
-  const oi=P.otherIncome?P.otherIncome.vals:Y.map(()=>0);
-  const ebitda=rev.map((r,i)=>r-opex[i]);
-  const pbt=rev.map((r,i)=>r+oi[i]-opex[i]-dep[i]-fin[i]);
-  const tax=P.tax?P.tax.vals:null;
-  // balance sheet
-  let WC=null, BS=null, rate=null, rateAssumed=false, wcItems=[];
-  const bs=bsText&&bsText.trim()?parseTable(bsText):null;
-  if(bs){
-    BS=mapRows(bs,BS_MAP,null).res;
-    const align=(k)=>{ if(!BS[k]) return null; const v=BS[k].vals; // align by position from the end
-      const out=Y.map(()=>null); for(let i=0;i<Math.min(v.length,n);i++) out[n-1-i]=v[v.length-1-i]; return out; };
-    const inv=align("inventory"), recv=align("receivables"), pay=align("payables"), borr=align("borrowings");
-    const cogsBase=P.materials?P.materials.vals:opex;
-    const days=(arr,base)=>arr?arr.map((v,i)=>v==null?null:(base[i]?v/base[i]*365:null)):null;
-    WC={dio:days(inv,cogsBase),dso:days(recv,rev),dpo:days(pay,cogsBase),inv,recv,pay,borr,cogsLabel:P.materials?"materials":"operating cost"};
-    if(borr&&borr[L]&&fin[L]){ const avg=borr[L-1]!=null?(borr[L]+borr[L-1])/2:borr[L]; rate=fin[L]/avg*100; }
-    if(!rate||rate>30||rate<2){rate=10;rateAssumed=true;}
-    const mk=(id,label,series,base,dir)=>{
-      if(!series) return; const valid=series.map((v,i)=>v==null?null:{v,i}).filter(Boolean); if(valid.length<2) return;
-      const best=dir==="low"?valid.reduce((a,b)=>b.v<a.v?b:a):valid.reduce((a,b)=>b.v>a.v?b:a);
-      const cur=series[L]; if(cur==null) return;
-      const gapDays=dir==="low"?cur-best.v:best.v-cur; if(gapDays<=0.5) return;
-      const cash=gapDays*base[L]/365;
-      wcItems.push({id,label,series,bestIdx:best.i,gapDays,cash,interest:cash*rate/100});
-    };
-    mk("dio","Inventory days",WC.dio,cogsBase,"low");
-    mk("dso","Receivable days",WC.dso,rev,"low");
-    mk("dpo","Payable days",WC.dpo,cogsBase,"high");
-  }
-  return {Y,n,L,rev,oi,opex,ebitda,pbt,tax,dep,fin,lines,WC,wcItems,rate,rateAssumed,BS,unmatchedCount:unmatched.length};
-}
-
-/* ===================== Formatting ===================== */
-let UNIT="₹ Cr";
-const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const fm=(v,d=1)=>(v==null||isNaN(v))?"–":v.toLocaleString("en-IN",{minimumFractionDigits:d,maximumFractionDigits:d});
-const money=(v,d=1)=>fm(v,d)+" "+UNIT;
-const pp=v=>(v>0?"+":"")+fm(v,1)+" pp";
-
-function spark(series,bestIdx,w=84,h=24){
-  const v=series.map(x=>x==null?NaN:x).filter(x=>!isNaN(x)); if(v.length<2) return "";
-  const mn=Math.min(...v), mx=Math.max(...v), r=mx-mn||1, n=series.length;
-  const pts=series.map((x,i)=>[2+i*(w-4)/(n-1), h-3-((x-mn)/r)*(h-6)]);
-  const d=pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
-  const last=pts[n-1], b=pts[bestIdx];
-  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><path d="${d}" fill="none" stroke="var(--muted)" stroke-width="1.5"/>`+
-    (b?`<circle cx="${b[0]}" cy="${b[1]}" r="2.6" fill="var(--good)"/>`:"")+
-    `<circle cx="${last[0]}" cy="${last[1]}" r="3" fill="var(--mark)"/></svg>`;
-}
-function marginChart(A){
-  const W=640,H=230,pl=44,pr=96,pt=16,pb=30;
-  const e=A.ebitda.map((x,i)=>pct(x,A.rev[i])), p=A.pbt.map((x,i)=>pct(x,A.rev[i]));
-  const all=[...e,...p]; let lo=Math.min(0,Math.floor(Math.min(...all)/2)*2), hi=Math.ceil(Math.max(...all)/2)*2+2;
-  const step=hi-lo>12?4:2;
-  const x=i=>pl+i*(W-pl-pr)/(A.n-1), y=v=>pt+(hi-v)/(hi-lo)*(H-pt-pb);
-  let g="";
-  for(let t=lo;t<=hi;t+=step){g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(t)}" y2="${y(t)}" stroke="var(--rule)" stroke-width="1"/><text x="${pl-8}" y="${y(t)+4}" text-anchor="end">${t}%</text>`;}
-  A.Y.forEach((yr,i)=>{g+=`<text x="${x(i)}" y="${H-8}" text-anchor="middle">${esc(yr)}</text>`;});
-  const path=(s,col)=>{const d=s.map((v,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+y(v).toFixed(1)).join(" ");
-    return `<path d="${d}" fill="none" stroke="${col}" stroke-width="2.5"/>`+s.map((v,i)=>`<circle cx="${x(i)}" cy="${y(v)}" r="${i===A.L?4:2.5}" fill="${col}"/>`).join("");};
-  const lab=(s,col,name)=>`<text x="${x(A.L)+10}" y="${y(s[A.L])+4}" style="fill:${col};font-weight:500">${name} ${fm(s[A.L])}%</text>`;
-  let ly1=y(e[A.L]), ly2=y(p[A.L]);
-  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:480px;max-width:${W}px" role="img" aria-label="EBITDA and profit-before-tax margin by year">${g}${path(e,"var(--accent)")}${path(p,"var(--mark)")}`+
-    `<text x="${x(A.L)+10}" y="${ly1+4+(Math.abs(ly1-ly2)<14&&ly1>ly2?6:0)}" style="fill:var(--accent);font-weight:500">EBITDA ${fm(e[A.L])}%</text>`+
-    `<text x="${x(A.L)+10}" y="${ly2+4+(Math.abs(ly1-ly2)<14&&ly2>=ly1?6:0)}" style="fill:var(--mark);font-weight:500">PBT ${fm(p[A.L])}%</text></svg>`;
-}
-
-/* ===================== Rendering ===================== */
-let A=null, CAPTURE=50;
-function render(){
-  const R=document.getElementById("results");
-  if(!A){R.innerHTML="";return;}
-  const L=A.L, cap=CAPTURE/100;
-  const eM=A.ebitda.map((x,i)=>pct(x,A.rev[i])), pM=A.pbt.map((x,i)=>pct(x,A.rev[i]));
-  const ops=A.lines.filter(l=>l.ctrl&&l.gap>0).sort((a,b)=>b.gap-a.gap);
-  const totalGap=ops.reduce((s,l)=>s+l.gap,0);
-  const wcCash=A.wcItems.reduce((s,w)=>s+w.cash,0), wcInt=A.wcItems.reduce((s,w)=>s+w.interest,0);
-  const revC=cagr(A.rev[0],A.rev[L],L);
-  const yrs=`${esc(A.Y[0])}–${esc(A.Y[L])}`;
-  let h="";
-  // KPIs
-  h+=`<div class="panel"><div class="eyebrow">2 · Summary, ${yrs}</div><h2 style="margin-bottom:12px">${headline(A,eM,ops,totalGap)}</h2>
-  <div class="kpis">
-    <div class="kpi"><div class="s">Revenue ${esc(A.Y[L])}</div><div class="v">${fm(A.rev[L],0)}</div><div class="s">${UNIT} · ${revC==null?"":fm(revC)+"% CAGR"}</div></div>
-    <div class="kpi"><div class="s">EBITDA margin</div><div class="v">${fm(eM[L])}%</div><div class="s ${eM[L]<eM[0]?"delta-bad":"delta-good"}">${pp(eM[L]-eM[0])} since ${esc(A.Y[0])}</div></div>
-    <div class="kpi"><div class="s">Cost drift vs own best year</div><div class="v">${fm(totalGap,1)}</div><div class="s">${UNIT} a year · ${fm(pct(totalGap,A.rev[L]))}% of revenue</div></div>
-    <div class="kpi"><div class="s">Cash tied up vs best year</div><div class="v">${A.WC?fm(wcCash,1):"–"}</div><div class="s">${A.WC?UNIT+" one-off release":"Add a balance sheet"}</div></div>
+<footer class="foot">
+  <div class="wrap">
+    <a class="logo" href="/" style="font-size:17px"><svg width="22" height="22" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="var(--brand)"/><path d="M5.5 19.5C11 19.5 13 15.5 16 13.5S20 9.5 22 8.5" fill="none" stroke="var(--on-brand)" stroke-width="2.4" stroke-linecap="round"/><circle cx="22" cy="8.5" r="2.7" fill="var(--drift)"/></svg>DriftLine</a>
+    <nav aria-label="Footer"><a href="/app">Diagnostic</a><a href="#pricing">Pricing</a><a href="/case-study">Case study</a><a href="https://mrudula-portfolio-theta.vercel.app/" target="_blank" rel="noopener">Built by Mrudula Kavuri ↗</a></nav>
+    <span>© 2026 DriftLine. Not financial advice.</span>
   </div>
-  <div class="chart-wrap" style="margin-top:16px">${marginChart(A)}</div>
-  <p class="hint" style="margin:6px 0 0">EBITDA here = revenue minus operating costs, excluding other income. PBT includes other income, depreciation and finance cost.${A.unmatchedCount?` ${A.unmatchedCount} line item(s) did not match a known category and are shown under their own names.`:""}</p></div>`;
-  // Opportunity table
-  h+=`<div class="panel"><div class="row" style="justify-content:space-between;align-items:flex-end">
-    <div><div class="eyebrow">3 · Where costs drifted</div><h2>Each cost line as a share of revenue</h2>
-    <p class="lede" style="margin:0">Gap = cost of returning the line to its best (lowest) share of revenue in your own history, at ${esc(A.Y[L])} revenue. Green dot marks the best year, amber the latest.</p></div>
-    <label class="slider" for="capIn">Assumed capture <input type="range" id="capIn" min="10" max="100" step="5" value="${CAPTURE}"> <strong id="capOut">${CAPTURE}%</strong></label></div>
-  <div class="tbl-wrap" style="margin-top:12px"><table>
-  <thead><tr><th>Cost line</th><th>Trend</th><th class="num">Latest</th><th class="num">Best (yr)</th><th class="num">CAGR cost / rev</th><th class="num">Gap / yr</th><th class="num">At ${CAPTURE}%</th><th>Signal</th></tr></thead><tbody>`;
-  const maxGap=Math.max(1e-9,...A.lines.map(l=>l.gap));
-  const sorted=A.lines.slice().sort((a,b)=>(b.ctrl-a.ctrl)||(b.gap-a.gap));
-  for(const l of sorted){
-    const conf=!l.ctrl?`<span class="chip low">Fixed cost</span>`:l.conf==="high"?`<span class="chip high">Rising yearly</span>`:l.conf==="med"?`<span class="chip med">Up overall</span>`:l.conf==="low"?`<span class="chip low">Volatile</span>`:`<span class="chip low">Near best</span>`;
-    const g=l.costC!=null&&l.revC!=null?`${fm(l.costC)} / ${fm(l.revC)}%`:"–";
-    h+=`<tr><td>${esc(l.label)}</td><td>${spark(l.ratio,l.bestIdx)}</td><td class="num">${fm(l.ratio[L],2)}%</td><td class="num">${fm(l.ratio[l.bestIdx],2)}% (${esc(A.Y[l.bestIdx])})</td><td class="num ${l.costC>l.revC+1?"delta-bad":""}">${g}</td>
-    <td class="num"><div class="barcell">${l.ctrl&&l.gap>0?`<span class="bar" style="width:${Math.max(3,l.gap/maxGap*60)}px"></span>`:""}${l.ctrl?fm(l.gap):"–"}</div></td><td class="num"><strong>${l.ctrl?fm(l.gap*cap):"–"}</strong></td><td>${conf}</td></tr>`;
-  }
-  h+=`<tr><td colspan="5"><strong>Controllable total</strong></td><td class="num"><strong>${fm(totalGap)}</strong></td><td class="num"><strong>${fm(totalGap*cap)}</strong></td><td class="hint">${fm(pct(totalGap*cap,A.rev[L]))} pp of margin</td></tr></tbody></table></div>
-  <p class="hint" style="margin:8px 0 0">The capture rate is an assumption, not a finding. Full reversion to a best year rarely happens, because some drift is input inflation the company cannot control.</p></div>`;
-  // Working capital
-  if(A.WC){
-    h+=`<div class="panel"><div class="eyebrow">4 · Working capital</div><h2>Cash, not cost, but it shows up in interest</h2>
-    <p class="lede" style="margin:0 0 10px">Days computed on year-end balances${A.WC.cogsLabel==="materials"?"; inventory and payable days use materials cost":""}. Cash release is a one-off; only the interest saved recurs. Interest rate ${A.rateAssumed?"assumed at 10% (could not infer it)":"inferred at "+fm(A.rate)+"% from finance cost ÷ average borrowings"}.</p>
-    <div class="tbl-wrap"><table><thead><tr><th>Metric</th><th>Trend</th>${A.Y.map(y=>`<th class="num">${esc(y)}</th>`).join("")}<th class="num">Cash release</th><th class="num">Interest / yr</th></tr></thead><tbody>`;
-    for(const [id,label,s] of [["dio","Inventory days",A.WC.dio],["dso","Receivable days",A.WC.dso],["dpo","Payable days",A.WC.dpo]]){
-      if(!s) continue; const it=A.wcItems.find(w=>w.id===id);
-      const bi=it?it.bestIdx:0;
-      h+=`<tr><td>${label}</td><td>${spark(s.map(v=>v??NaN),bi)}</td>${s.map(v=>`<td class="num">${v==null?"–":fm(v,0)}</td>`).join("")}<td class="num">${it?fm(it.cash):"–"}</td><td class="num">${it?fm(it.interest,2):"–"}</td></tr>`;
-    }
-    h+=`</tbody></table></div></div>`;
-  }
-  // insights
-  const cards=[...ops.slice(0,6).map(l=>({kind:"cost",l})), ...A.wcItems.map(w=>({kind:"wc",w}))];
-  h+=`<div class="panel"><div class="eyebrow">5 · Insights</div><h2>Where to look first, and what to ask</h2>
-  <p class="lede">Ranked by size. Each one says what the statements show, what they cannot show, and the data that would turn the signal into an action.</p><div class="insights">`;
-  for(const c of cards){
-    if(c.kind==="cost"){
-      const l=c.l, C=CATS[l.cat];
-      h+=`<article class="insight"><div class="eyebrow">${esc(C.name)}</div><h3>${esc(l.label)}</h3>
-      <div class="amt">${money(l.gap*cap)} <span class="hint" style="font-weight:400">/ yr at ${CAPTURE}% capture</span></div>
-      <p>Rose from ${fm(l.ratio[l.bestIdx],2)}% of revenue in ${esc(A.Y[l.bestIdx])} to ${fm(l.ratio[L],2)}% in ${esc(A.Y[L])}${l.costC!=null&&l.revC!=null?`. The line grew ${fm(l.costC)}% a year while revenue grew ${fm(l.revC)}%`:""}.</p>
-      ${C.risk?`<p class="delta-bad" style="font-size:14px"><strong>Caution:</strong> ${esc(C.risk)}</p>`:""}
-      <details><summary>What the numbers can't tell you, and next steps</summary>
-      <h4>Not visible in statements</h4><p style="font-size:14px">${esc(C.cannot)}</p>
-      <h4>Data to pull</h4><ul>${C.pull.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
-      <h4>Typical levers, if the data confirms it</h4><ul>${C.levers.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></details></article>`;
-    } else {
-      const w=c.w; const s=w.series;
-      h+=`<article class="insight cash"><div class="eyebrow">Working capital</div><h3>${esc(w.label)}</h3>
-      <div class="amt">${money(w.cash)} <span class="hint" style="font-weight:400">cash, ${money(w.interest,2)} interest / yr</span></div>
-      <p>${w.id==="dpo"?"Fell":"Rose"} from ${fm(s[w.bestIdx],0)} days in ${esc(A.Y[w.bestIdx])} to ${fm(s[L],0)} in ${esc(A.Y[L])}.</p>
-      <details><summary>What to check</summary><ul>${
-        (w.id==="dio"?["Split raw material, WIP and finished goods; which one grew?","Slow-moving and obsolete stock older than 180 days","Safety-stock rules vs actual supplier lead times"]:
-         w.id==="dso"?["Ageing of receivables by customer; are a few customers driving it?","Credit terms granted vs collected","Disputed invoices and deductions"]:
-         ["Were supplier terms shortened, or are you paying early for discounts?","Whether paying slower would strain small suppliers (and the legal 45-day MSME payment rule in India)"]).map(x=>`<li>${esc(x)}</li>`).join("")
-      }</ul></details></article>`;
-    }
-  }
-  if(!cards.length) h+=`<p>No line has drifted above its best year. Cost-out from history alone looks limited; peer benchmarks or ledger data would be the next step.</p>`;
-  h+=`</div></div>`;
-  h+=`<div class="limits"><h3>What this diagnostic cannot see</h3><ul>
-    <li>Prices vs volumes: a rising ratio can be input inflation, product mix or genuine waste.</li>
-    <li>One-off items buried in a line (a lawsuit, a plant shutdown, a revaluation).</li>
-    <li>How you compare to peers. Your own best year may still be inefficient.</li>
-    <li>Revenue-side levers such as pricing, discounts and customer profitability, which are often larger than cost savings.</li></ul></div>`;
-  R.innerHTML=h;
-  const capIn=document.getElementById("capIn");
-  capIn.addEventListener("input",()=>{CAPTURE=+capIn.value;render();document.getElementById("capIn").focus();});
-}
-function headline(A,eM,ops,totalGap){
-  const d=eM[A.L]-eM[0];
-  const top=ops.slice(0,2).map(l=>l.label.toLowerCase());
-  if(d<-0.5&&top.length) return `EBITDA margin fell ${fm(-d)} points; ${esc(top.join(" and "))} explain the largest share.`;
-  if(d>=-0.5&&totalGap>0) return `Margins held, but ${fm(totalGap)} ${UNIT} of cost has drifted above its best year.`;
-  return `Costs are close to their best historical levels.`;
-}
+</footer>
 
-/* ===================== Controls ===================== */
-const plT=document.getElementById("plText"), bsT=document.getElementById("bsText"), errEl=document.getElementById("errMsg"), flag=document.getElementById("exampleFlag");
-function run(){
-  errEl.textContent=""; UNIT=document.getElementById("unitIn").value.trim()||"units";
-  try{ A=analyse(plT.value,bsT.value); render(); resetChat(); }
-  catch(e){ errEl.textContent=e.message; }
-}
-function loadSample(){ plT.value=SAMPLE_PL; bsT.value=SAMPLE_BS; flag.hidden=false; document.getElementById("unitIn").value="₹ Cr"; run(); }
-document.getElementById("runBtn").onclick=run;
-document.getElementById("sampleBtn").onclick=loadSample;
-[plT,bsT].forEach(t=>t.addEventListener("input",()=>{flag.hidden=true;}));
-async function readFile(file,target){
-  errEl.textContent="";
+<script>
+document.querySelectorAll('[data-plan]').forEach(a=>a.addEventListener('click',()=>{const s=document.getElementById('eaPlan');s.value=a.dataset.plan;}));
+const f=document.getElementById('eaForm'), msg=document.getElementById('eaMsg'), btn=document.getElementById('eaBtn');
+f.addEventListener('submit',async e=>{
+  e.preventDefault(); msg.className='form-msg'; msg.textContent='';
+  const d=Object.fromEntries(new FormData(f));
+  if(!d.name.trim()){msg.className='form-msg err';msg.textContent='Add your name.';return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)){msg.className='form-msg err';msg.textContent='Enter a valid email address.';return;}
+  btn.disabled=true; btn.textContent='Sending…';
   try{
-    if(/\.xlsx?$/i.test(file.name)){
-      if(typeof XLSX==="undefined") throw new Error("Excel reader did not load. Save the sheet as CSV and upload that.");
-      const wb=XLSX.read(await file.arrayBuffer(),{type:"array"});
-      target.value=XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]]);
-    } else target.value=await file.text();
-    flag.hidden=true;
-  }catch(e){ errEl.textContent=e.message||"Could not read that file."; }
-}
-document.getElementById("plFile").onchange=e=>{if(e.target.files[0]) readFile(e.target.files[0],plT);};
-document.getElementById("bsFile").onchange=e=>{if(e.target.files[0]) readFile(e.target.files[0],bsT);};
-document.querySelectorAll("nav.tabs button").forEach(b=>b.onclick=()=>{
-  document.querySelectorAll("nav.tabs button").forEach(x=>{x.setAttribute("aria-selected",x===b);document.getElementById(x.dataset.panel).hidden=x!==b;});
-  try{localStorage.setItem("ml-tab",b.id);}catch(_){}
+    const r=await fetch('/api/waitlist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+    if(r.ok){f.reset();msg.className='form-msg ok';msg.textContent="You're on the list. We'll be in touch.";}
+    else{const j=await r.json().catch(()=>({}));msg.className='form-msg err';msg.textContent=j.error||'Something went wrong. Try again in a minute.';}
+  }catch(_){msg.className='form-msg err';msg.textContent="Couldn't reach the server. Check your connection and try again.";}
+  btn.disabled=false; btn.textContent='Request early access';
 });
-try{const t=localStorage.getItem("ml-tab"); if(t&&document.getElementById(t)) document.getElementById(t).click();}catch(_){}
-
-/* ===================== Chat ===================== */
-const log=document.getElementById("chatLog"), chipsEl=document.getElementById("chatChips"), form=document.getElementById("chatForm"), inp=document.getElementById("chatIn"), sendB=document.getElementById("chatSend"), stopB=document.getElementById("chatStop"), note=document.getElementById("chatNote");
-let turns=[], liveOff=false, ctl=null;
-const CHIPS=["Why did EBITDA margin fall?","Which saving should we start with?","Is the materials increase really inefficiency?","How much cash is stuck in inventory?","What data should we pull before acting?"];
-function md(t){
-  const lines=esc(t).split(/\n/); let out="", inList=false;
-  for(const ln of lines){
-    const b=ln.replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>");
-    if(/^\s*[-*•]\s+/.test(ln)){ if(!inList){out+="<ul>";inList=true;} out+="<li>"+b.replace(/^\s*[-*•]\s+/,"")+"</li>"; }
-    else { if(inList){out+="</ul>";inList=false;} if(b.trim()) out+="<p>"+b+"</p>"; }
-  }
-  if(inList) out+="</ul>"; return out;
-}
-function addMsg(role,html){const d=document.createElement("div");d.className="msg "+role;d.innerHTML=html;log.appendChild(d);log.scrollTop=log.scrollHeight;return d;}
-function resetChat(){
-  turns=[]; log.innerHTML="";
-  addMsg("bot",md(A?`I'm Plop. I have the statements for ${A.Y[0]}–${A.Y[A.L]}. Ask me about margins, specific cost lines or working capital. I will say when the statements can't answer something.`:"Load statements to start."));
-  chipsEl.innerHTML=CHIPS.map(c=>`<button type="button">${esc(c)}</button>`).join("");
-  chipsEl.querySelectorAll("button").forEach(b=>b.onclick=()=>{inp.value=b.textContent;form.requestSubmit();});
-}
-function context(){
-  if(!A) return "No data loaded.";
-  const r2=v=>v==null?null:Math.round(v*100)/100;
-  const o={units:UNIT,years:A.Y,revenue:A.rev,otherIncome:A.oi,ebitda:A.ebitda.map(r2),ebitdaMarginPct:A.ebitda.map((x,i)=>r2(pct(x,A.rev[i]))),pbt:A.pbt.map(r2),
-    costLines:A.lines.map(l=>({line:l.label,category:CATS[l.cat].name,controllable:l.ctrl,values:l.vals,pctOfRevenue:l.ratio.map(r2),bestYear:A.Y[l.bestIdx],gapToBestPerYear:r2(l.gap),costCAGRpct:r2(l.costC),revenueCAGRpct:r2(l.revC)})),
-    assumedCaptureRatePct:CAPTURE,
-    workingCapital:A.WC?{inventoryDays:A.WC.dio&&A.WC.dio.map(r2),receivableDays:A.WC.dso&&A.WC.dso.map(r2),payableDays:A.WC.dpo&&A.WC.dpo.map(r2),opportunities:A.wcItems.map(w=>({metric:w.label,bestYear:A.Y[w.bestIdx],cashRelease:r2(w.cash),interestSavedPerYear:r2(w.interest)})),interestRatePct:r2(A.rate),interestRateAssumed:A.rateAssumed}:null,
-    rawPL:plT.value.slice(0,6000),rawBS:bsT.value.slice(0,4000)};
-  return JSON.stringify(o);
-}
-function fallback(q){
-  if(!A) return "Load statements first.";
-  const s=q.toLowerCase(); const L=A.L;
-  const ops=A.lines.filter(l=>l.ctrl&&l.gap>0).sort((a,b)=>b.gap-a.gap);
-  const hit=A.lines.find(l=>s.includes(l.label.toLowerCase().split(" ")[0]));
-  if(hit) return `**${hit.label}**: ${fm(hit.ratio[L],2)}% of revenue in ${A.Y[L]} vs a best of ${fm(hit.ratio[hit.bestIdx],2)}% in ${A.Y[hit.bestIdx]}. Gap to best: ${money(hit.gap)} a year.`;
-  if(/cash|inventor|receiv|payab|working/.test(s)) return A.wcItems.length?A.wcItems.map(w=>`- ${w.label}: ${money(w.cash)} release vs ${A.Y[w.bestIdx]}`).join("\n"):"No working-capital drift found, or no balance sheet loaded.";
-  if(/margin|ebitda|profit/.test(s)){const e=A.ebitda.map((x,i)=>pct(x,A.rev[i]));return `EBITDA margin went from ${fm(e[0])}% to ${fm(e[L])}%. Largest drifts: ${ops.slice(0,3).map(l=>l.label+" ("+fm(l.gapPct,2)+" pp)").join(", ")}.`;}
-  return ops.length?`Largest gaps to best year:\n${ops.slice(0,4).map(l=>`- ${l.label}: ${money(l.gap)}`).join("\n")}`:"No cost line is above its best year.";
-}
-form.addEventListener("submit",async e=>{
-  e.preventDefault(); const q=inp.value.trim(); if(!q||ctl) return;
-  inp.value=""; addMsg("user",esc(q)); const bubble=addMsg("bot","<p>Thinking…</p>");
-  if(liveOff){ bubble.innerHTML=md(fallback(q)); return; }
-  turns.push({role:"user",content:q}); if(turns.length>12) turns=turns.slice(-12); if(turns[0].role!=="user") turns.shift();
-  ctl=new AbortController(); sendB.disabled=true; stopB.hidden=false;
-  try{
-    const r=await fetch("/api/plop",{method:"POST",headers:{"Content-Type":"application/json"},signal:ctl.signal,
-      body:JSON.stringify({units:UNIT,data:context(),turns})});
-    const j=await r.json().catch(()=>({}));
-    if(!r.ok){
-      turns.pop();
-      if(r.status===429){ bubble.innerHTML=`<p class="hint">${esc(j.error||"Too many questions in a short time. Try again in a minute.")}</p>`; return; }
-      if(r.status===503||r.status===404){ liveOff=true; note.textContent="Live answers aren't switched on for this site, so Plop gives basic lookups from the analysis."; bubble.innerHTML=md(fallback(q)); return; }
-      bubble.innerHTML=`<p class="hint">${esc(j.error||"Plop couldn't answer just now. Ask again.")}</p>`; return;
-    }
-    bubble.innerHTML=md(j.text)+(j.truncated?"<p class='hint'>Answer cut short. Ask for less at a time.</p>":"");
-    turns.push({role:"assistant",content:j.text});
-    log.scrollTop=log.scrollHeight;
-  }catch(err){
-    turns.pop();
-    if(err&&err.name==="AbortError"){ bubble.innerHTML="<p class='hint'>Stopped.</p>"; }
-    else { bubble.innerHTML=md(fallback(q))+"<p class='hint'>Couldn't reach Plop's live service, so this is a basic lookup.</p>"; }
-  }finally{ ctl=null; sendB.disabled=false; stopB.hidden=true; }
-});
-stopB.onclick=()=>ctl&&ctl.abort();
-
-loadSample();
 </script>
-
 </body>
 </html>

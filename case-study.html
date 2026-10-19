@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>DriftLine case study</title>
+<meta name="description" content="How DriftLine was conceived, stress-tested and built: a partner-style critique, market sizing for Indian MSMEs, and an 18-month roadmap.">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+.cs-hero{padding-block:64px 24px}
+.cs-hero h1{font-size:clamp(36px,5vw,58px);font-weight:800;line-height:1.04;margin:12px 0 18px;max-width:18ch}
+.cs-hero p{color:var(--muted);font-size:19px;max-width:40em}
+.meta{display:flex;flex-wrap:wrap;gap:10px 28px;margin-top:26px;font-size:14px;color:var(--muted)}
+.meta b{display:block;color:var(--ink);font-weight:600}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:28px}
+.toc a{font-size:14px;text-decoration:none;color:var(--ink);border:1px solid var(--line-strong);border-radius:999px;padding:7px 14px;background:var(--surface)}
+.toc a:hover{border-color:var(--brand);color:var(--brand)}
+.part{padding-top:72px}
+.part > .wrap > .stack{display:flex;flex-direction:column;gap:20px}
+.stack{display:flex;flex-direction:column;gap:20px}
+h2{font-size:clamp(28px,3.2vw,40px);font-weight:800;line-height:1.1;margin-top:8px}
+h3{font-size:20px;margin-bottom:8px}
+.lede{color:var(--muted);font-size:17px;max-width:68ch;margin-top:10px}
+.panel,.qcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px;min-width:0}
+.verdict{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--drift);border-radius:14px;padding:24px 26px;max-width:860px}
+.verdict p{margin-top:10px}
+.qgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+@media (max-width:820px){.qgrid{grid-template-columns:minmax(0,1fr)}}
+.qcard ol,.qcard ul{margin:8px 0 0;padding-left:20px}
+.qcard li{margin:8px 0;font-size:15.5px}
+.qcard p{font-size:15.5px;margin-top:8px}
+.eyebrow{color:var(--brand)}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th{font:500 11px var(--f-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:left;padding:10px;border-bottom:1px solid var(--line)}
+td{padding:12px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ftable td:first-child{font-weight:600;width:22%}
+.limits{background:var(--sunken);border-radius:14px;padding:22px 26px}
+.limits ul{margin:8px 0 0;padding-left:20px}
+.phases{display:flex;flex-direction:column;border-left:2px solid var(--line-strong);margin-left:8px}
+.phase{position:relative;padding:0 0 30px 26px}
+.phase::before{content:"";position:absolute;left:-8px;top:6px;width:14px;height:14px;border-radius:50%;background:var(--surface);border:3px solid var(--brand)}
+.phase .when{font:500 13px var(--f-mono);color:var(--brand)}
+.phase-body{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:10px}
+@media (max-width:860px){.phase-body{grid-template-columns:minmax(0,1fr)}}
+.phase-body div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:0}
+.phase-body h4{font:500 11px var(--f-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 6px}
+.phase-body ul{margin:0;padding-left:18px}
+.phase-body li{font-size:14.5px;margin:3px 0}
+.kill{color:var(--bad)}
+.funnel{display:grid;gap:10px}
+.fstep{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 18px;position:relative;overflow:hidden}
+.fstep i{position:absolute;left:0;top:0;bottom:0;background:var(--brand-soft);z-index:0}
+.fstep > *{position:relative;z-index:1}
+.fstep b{display:block}
+.fstep span{font-size:14px;color:var(--muted)}
+.fstep .v{font:700 24px var(--f-display);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tagA{font:500 10.5px var(--f-mono);text-transform:uppercase;letter-spacing:.06em;padding:2px 6px;border-radius:4px;margin-left:6px}
+.tagA.f{background:var(--good-soft);color:var(--good)}
+.tagA.a{background:var(--warn-soft);color:var(--warn)}
+.src{font-size:13.5px;color:var(--muted)}
+.src a{color:var(--muted)}
+</style>
+</head>
+<body>
+<header class="nav">
+  <div class="wrap">
+    <a class="logo" href="/" aria-label="DriftLine home"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="var(--brand)"/><path d="M5.5 19.5h17" stroke="var(--on-brand)" stroke-opacity=".5" stroke-width="1.8" stroke-dasharray="2 2.4"/><path d="M5.5 19.5C11 19.5 13 15.5 16 13.5S20 9.5 22 8.5" fill="none" stroke="var(--on-brand)" stroke-width="2.2" stroke-linecap="round"/><circle cx="22" cy="8.5" r="2.7" fill="var(--drift)"/></svg>DriftLine</a>
+    <nav class="nav-links" aria-label="Main"><a class="hide-sm" href="/">Product</a><a class="btn primary sm" href="/app">Try the diagnostic</a></nav>
+  </div>
+</header>
+<main>
+<section class="cs-hero">
+  <div class="wrap">
+    <div class="eyebrow">Case study</div>
+    <h1>Building a cost diagnostic, and arguing against it first.</h1>
+    <p>DriftLine started as an idea: let a company upload its P&amp;L and get told where to save money. Before building it properly, I reviewed the idea the way a strategy partner would, sized the market for Indian MSMEs, and set a roadmap with clear points to stop.</p>
+    <div class="meta"><span><b>Role</b>Product, strategy and design</span><span><b>Built with</b>AI-assisted coding: JavaScript, Vercel Functions, Gemini</span><span><b>Status</b>Live diagnostic; paid plans in early access</span><span><b>By</b><a href="https://mrudula-portfolio-theta.vercel.app/" target="_blank" rel="noopener">Mrudula Kavuri ↗</a></span></div>
+    <nav class="toc" aria-label="Sections"><a href="#review">1. The critique</a><a href="#market">2. Market sizing</a><a href="#roadmap">3. Roadmap</a><a href="/app">Try the product ↗</a></nav>
+  </div>
+</section>
+
+<section class="part" id="review"><div class="wrap">
+
+  <div class="stack">
+    <div>
+      <div class="eyebrow">Partner review · product concept</div>
+      <h2>Is a cost-cutting tool built on annual statements a business?</h2>
+      <p class="lede">A deliberately skeptical read of the concept, written the way a steering committee would hear it. The <a href="/app">live diagnostic</a> exists to test these points, not to argue past them.</p>
+    </div>
+
+    <div class="verdict">
+      <h3>Verdict</h3>
+      <p>The concept as stated has a structural flaw: <strong>a P&amp;L and balance sheet can tell you where to look, but almost never what to do.</strong> "Other expenses rose from 2.2% to 2.6% of revenue" is a real signal; "cut travel by renegotiating your top three vendors" requires vendor-level spend data that annual statements do not contain. If you promise the second and deliver the first, CFOs will churn after the first report because they already know their ratios.</p>
+      <p style="margin-bottom:0">The idea becomes viable if you reposition it: annual statements are the <em>free entry diagnostic</em> (fast, no integration, good for lead generation), and the paid product connects to the accounting system for ledger- and vendor-level data, adds peer benchmarks, and tracks whether savings are actually realised. The rest of this page explains why.</p>
+    </div>
+
+    <div class="qgrid">
+      <div class="qcard">
+        <div class="eyebrow">Questions I would ask you</div>
+        <h3>Customer and value</h3>
+        <ol>
+          <li><strong>Who exactly is the buyer?</strong> A CFO of a ₹500 Cr company has a finance team that already computes these ratios. An MSME owner lacks the analysis but has low willingness to pay. These are different products.</li>
+          <li><strong>What decision does the user make the day after reading the report?</strong> If you can't name one, the report is interesting, not valuable.</li>
+          <li><strong>Why would they not upload the same statements into a general AI assistant?</strong> That is now free and good enough for ratio commentary. Your moat cannot be the commentary.</li>
+          <li><strong>How will you prove savings were realised?</strong> Without measurement you are selling opinions, and you cannot price on outcomes.</li>
+        </ol>
+      </div>
+      <div class="qcard">
+        <div class="eyebrow">Questions I would ask you</div>
+        <h3>Data and method</h3>
+        <ol>
+          <li><strong>What is your benchmark source?</strong> "Your power cost is high" needs a peer set by industry and size. In India that means MCA filings or licensed databases (e.g. CMIE Prowess). Building that is a real moat; skipping it leaves only self-comparison.</li>
+          <li><strong>How will you separate inefficiency from price and mix?</strong> A material cost ratio rising from 60% to 62.5% might be commodity inflation the company could not control, a shift to a lower-margin product, or genuine waste. Statements alone cannot tell these apart.</li>
+          <li><strong>How will you get clean data in?</strong> Real statements arrive as scanned PDFs with notes, regroupings and restatements. Extraction and line-item mapping is most of the engineering effort, not the analytics.</li>
+          <li><strong>Three to five annual data points is a small sample.</strong> How do you avoid presenting noise or one-off items as trends?</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Facts, assumptions and judgments in the concept</h3>
+      <div class="tbl-wrap">
+      <table class="ftable">
+        <thead><tr><th>Type</th><th>Statement</th></tr></thead>
+        <tbody>
+          <tr><td>Fact</td><td>Annual statements show cost by nature (materials, employee, power) at an aggregated level. They do not show vendors, contracts, units consumed or prices paid.</td></tr>
+          <tr><td>Fact</td><td>Cost ratios and working-capital days can be computed reliably from them, and changes over time are visible.</td></tr>
+          <tr><td>Assumption</td><td>That companies lack this analysis today. Likely true for small firms, likely false for mid-size firms with a finance team or a retained CA.</td></tr>
+          <tr><td>Assumption</td><td>That a company will act on a software-generated recommendation without a person to own it. Cost programmes usually fail on execution, not identification.</td></tr>
+          <tr><td>Assumption</td><td>That companies will upload confidential financials to a new vendor. Listed companies' statements are public anyway; private companies will ask hard security questions.</td></tr>
+          <tr><td>Inference</td><td>Because the input is coarse, specific "do X" recommendations from statements alone will often be generic. Quality rises sharply once ledger data is available.</td></tr>
+          <tr><td>Judgment</td><td>The defensible business is benchmarks + ledger integration + savings tracking, with statement upload as the entry point.</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    <div class="qgrid">
+      <div class="qcard">
+        <div class="eyebrow">Steelman</div>
+        <h3>The strongest case for building it as you described</h3>
+        <p>Most small and mid-size companies never get a structured outside look at their cost base. A ten-minute, low-friction diagnostic that says "these four lines drifted, this is what it is worth, here are the questions to ask" is more than many of them get today. It needs no integration, works from documents they already file, and can be sold through chartered-accountant firms who serve thousands of clients. Being directionally right on where to look is useful even if the "how" stays with the client.</p>
+      </div>
+      <div class="qcard">
+        <div class="eyebrow">What you are missing</div>
+        <h3>Risks and blind spots</h3>
+        <ul>
+          <li><strong>Cutting the wrong cost.</strong> Marketing, R&amp;D and maintenance cuts improve this year's margin and damage next year's revenue or asset life. The tool must say when not to cut.</li>
+          <li><strong>Revenue is usually the bigger lever.</strong> A one-point price increase often beats a year of cost work. A pure cost tool ignores pricing and mix.</li>
+          <li><strong>Liability.</strong> A wrong recommendation that leads to layoffs or supplier loss is a reputational risk. Frame output as diagnosis, not advice.</li>
+          <li><strong>Existing players.</strong> FP&amp;A tools (for example Fathom, Spotlight Reporting, Datarails, Cube), accounting suites with analytics, and CA firms already sit in this workflow. Distribution may matter more than features.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="limits">
+      <h3>How the product responds to these critiques</h3>
+      <ul>
+        <li>It sizes savings against the company's <strong>own best year</strong>, not an invented benchmark, and lets you set the capture rate instead of assuming 100%.</li>
+        <li>Every insight separates what the numbers show from what they cannot show, and lists the data to pull next.</li>
+        <li>Working capital is reported as <strong>cash release</strong>, with only the interest saving counted as P&amp;L impact.</li>
+        <li>Depreciation, finance cost and tax are excluded from "controllable" savings.</li>
+      </ul>
+    </div>
+  </div>
+
+</div></section>
+
+<section class="part" id="market"><div class="wrap"><div class="stack">
+  <div>
+    <div class="eyebrow">Market sizing · Indian MSMEs</div>
+    <h2>The real market is much smaller than "MSMEs in India".</h2>
+    <p class="lede">India has crores of registered MSMEs, but most are informal micro units with no balance sheet to analyse. The product needs several years of clean statements, and a cost gap large enough in rupees to be worth paying to find. That narrows the market fast.</p>
+  </div>
+  <div class="funnel">
+    <div class="fstep"><i style="width:100%"></i><div><b>All Udyam and Udyam Assist registrations <span class="tagA f">Fact</span></b><span>Mostly informal micro units, June 2026</span></div><div class="v">8.84 crore</div></div>
+    <div class="fstep"><i style="width:34%"></i><div><b>Small and medium enterprises <span class="tagA f">Fact</span></b><span>Turnover ₹10–500 Cr: about 4.91 lakh small and 37,000 medium</span></div><div class="v">≈5.3 lakh</div></div>
+    <div class="fstep"><i style="width:22%"></i><div><b>With three or more years of clean statements <span class="tagA a">Assumption: 65%</span></b><span>Firms the diagnostic can actually work for</span></div><div class="v">≈3.4 lakh</div></div>
+    <div class="fstep"><i style="width:14%"></i><div><b>Serviceable market at Pro list price <span class="tagA a">Assumption</span></b><span>3.4 lakh firms × ₹19,999 a year</span></div><div class="v">≈₹690 Cr</div></div>
+    <div class="fstep"><i style="width:6%"></i><div><b>Obtainable in five years <span class="tagA a">Assumption: 1–2%</span></b><span>Normal to optimistic share for software sold to Indian SMEs</span></div><div class="v">₹7–14 Cr</div></div>
+  </div>
+  <div class="qgrid">
+    <div class="qcard"><h3>Cross-check through CA firms</h3><p>India has about 99,000 CA firms. If 1,000 of them took the CA Partner plan at ₹9,999 a month, that's about ₹12 Cr a year. The two routes land in the same range, which gives the estimate some credibility, and suggests CA firms could be the faster channel.</p></div>
+    <div class="qcard"><h3>What would change the answer</h3><ul><li>If firms will only pay ₹10,000 a year, the serviceable market halves.</li><li>If lenders, who analyse MSME statements for every loan, are the better buyer, the market is fewer customers paying far more.</li><li>The first test is simple: ask owners what they paid last year for anything beyond Tally and their CA.</li></ul></div>
+  </div>
+  <p class="src">Sources: MSME Ministry reply to Rajya Sabha via <a href="https://knnindia.co.in/news/newsdetails/msme/over-884-crore-msmes-registered-on-udyam-platforms-mos-karandlaje" target="_blank" rel="noopener">KNN India</a> (8.84 crore, June 2026); Udyam category counts via <a href="https://datarankindia.com/india-msme-statistics/" target="_blank" rel="noopener">DataRank India</a> (June 2026); CA firm count from <a href="https://taxconcept.net/icai/statistics-of-icai-members-students-firms-till-28th-february-2025/" target="_blank" rel="noopener">ICAI statistics</a> (Feb 2025). Counts are registrations, not confirmed active firms.</p>
+</div></div></section>
+
+<section class="part" id="roadmap"><div class="wrap">
+
+  <div class="stack">
+    <div>
+      <div class="eyebrow">Roadmap · 18 months</div>
+      <h2>Validate first, then earn the right to deeper data</h2>
+      <p class="lede">Each phase has a test it must pass before the next one is funded. The order matters: building ledger integrations before you know which insights drive action is the most likely way to waste the first year.</p>
+    </div>
+    <div class="phases">
+      <div class="phase">
+        <div class="when">Weeks 0–6</div>
+        <h3>Phase 0 · Validate the problem</h3>
+        <div class="phase-body">
+          <div><h4>Build</h4><ul><li>This prototype, plus a manual "concierge" diagnostic run by a person for 10–15 companies</li><li>15–20 interviews: CFOs, MSME owners, CA partners</li></ul></div>
+          <div><h4>Learn</h4><ul><li>Which buyer feels the pain most and will pay</li><li>Which insights led to an actual action within 30 days</li><li>Whether CA firms want it as a client-service tool</li></ul></div>
+          <div><h4>Pass / kill</h4><ul><li>Pass: ≥ 5 of 15 companies act on a finding and ≥ 3 say they would pay</li><li class="kill">Kill or pivot: reports are called "interesting" but nobody acts</li></ul></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="when">Months 2–4</div>
+        <h3>Phase 1 · Statement diagnostic MVP</h3>
+        <div class="phase-body">
+          <div><h4>Build</h4><ul><li>PDF and Excel extraction for Schedule III and common formats, with a human review step</li><li>Line-item mapping, ratio engine, own-history sizing, chat grounded in the data</li><li>Security basics: encryption, deletion on request, no training on client data</li></ul></div>
+          <div><h4>Learn</h4><ul><li>Extraction accuracy on real statements</li><li>Time from upload to report</li><li>Conversion from free diagnostic to a sales call</li></ul></div>
+          <div><h4>Metrics</h4><ul><li>≥ 95% line-item mapping accuracy after review</li><li>Report in under 10 minutes</li><li>≥ 10% of free users request the deeper product</li></ul></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="when">Months 4–9</div>
+        <h3>Phase 2 · Benchmarks and ledger data</h3>
+        <div class="phase-body">
+          <div><h4>Build</h4><ul><li>Peer benchmark set by industry and revenue band (MCA filings, licensed databases)</li><li>Connectors to accounting systems common with your buyers (Tally, Zoho Books, SAP B1)</li><li>Vendor spend cube: spend by vendor, category and month</li></ul></div>
+          <div><h4>Learn</h4><ul><li>Whether peer gaps change recommendations versus own-history gaps</li><li>Which spend categories have the largest addressable gap</li></ul></div>
+          <div><h4>Metrics</h4><ul><li>Recommendations name a vendor or contract, not just a line item</li><li>Paid pilots with ≥ 10 companies</li></ul></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="when">Months 9–18</div>
+        <h3>Phase 3 · From insight to realised savings</h3>
+        <div class="phase-body">
+          <div><h4>Build</h4><ul><li>Initiative tracker: owner, target, due date per saving</li><li>Monthly realised-savings measurement against baseline, adjusted for volume and price</li><li>Lever library by category; pricing and mix analysis on the revenue side</li><li>White-label edition for CA and advisory firms</li></ul></div>
+          <div><h4>Learn</h4><ul><li>Identified-to-realised savings conversion</li><li>Whether outcome-based pricing is viable</li></ul></div>
+          <div><h4>Metrics</h4><ul><li>≥ 40% of identified savings realised within 12 months</li><li>Net revenue retention above 100%</li></ul></div>
+        </div>
+      </div>
+      <div class="phase" style="padding-bottom:0">
+        <div class="when">Beyond 18 months</div>
+        <h3>Phase 4 · Planning layer</h3>
+        <div class="phase-body">
+          <div><h4>Build</h4><ul><li>Rolling forecast and scenario planning (commodity, wage, FX shocks)</li><li>Alerts when a cost line drifts month on month</li></ul></div>
+          <div><h4>Why later</h4><ul><li>Planning is a crowded FP&amp;A market. Enter it only with proprietary benchmark and savings data competitors lack.</li></ul></div>
+          <div><h4>Risk</h4><ul><li>Feature sprawl that dilutes the cost wedge before it has proven retention</li></ul></div>
+        </div>
+      </div>
+    </div>
+    <div class="limits">
+      <h3>Most likely way this fails</h3>
+      <p style="margin:6px 0 0">The team spends nine months perfecting PDF extraction and charts, ships a polished report, and discovers that buyers already knew their ratios and wanted someone to negotiate with suppliers. Phase 0 exists to find that out in six weeks instead.</p>
+    </div>
+  </div>
+
+</div></section>
+</main>
+<footer class="foot">
+  <div class="wrap">
+    <span>© 2026 DriftLine. Case study by Mrudula Kavuri.</span>
+    <nav aria-label="Footer"><a href="/">Product</a><a href="/app">Diagnostic</a><a href="https://mrudula-portfolio-theta.vercel.app/" target="_blank" rel="noopener">Portfolio ↗</a></nav>
+  </div>
+</footer>
+</body>
+</html>
