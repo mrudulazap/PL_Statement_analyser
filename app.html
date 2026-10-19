@@ -700,7 +700,7 @@ async function importPdf(file,target,nameEl){
   let r,j;
   try{ r=await fetch("/api/extract",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text})}); j=await r.json().catch(()=>({})); }
   catch(_){ return fail("Couldn't reach DriftLine's PDF reader. Check your connection and try again.","network"); }
-  if(!r.ok) return fail(j.error||"Couldn't read that PDF. Try again, or copy the table into Excel.",r.status===503?"off":r.status===422?"not_found":"failed");
+  if(!r.ok) return fail((j.error||"Couldn't read that PDF. Try again, or copy the table into Excel.")+(j.detail?" ("+j.detail+")":(r.status>=500&&!j.error?` (Server ${r.status}${r.status===504?": the PDF took too long to read":""})`:"")),r.status===503?"off":r.status===422?"not_found":"failed");
   setPdfState("");
   if(!j.pl) return fail("Couldn't find a full-year profit and loss statement in this PDF.","not_found");
   const replacePL=target===plT||!plT.value.trim()||plT.value===SAMPLE_PL;
@@ -772,7 +772,7 @@ form.addEventListener("submit",async e=>{
       turns.pop();
       if(r.status===429){ bubble.innerHTML=`<p class="hint">${esc(j.error||"Too many questions in a short time. Try again in a minute.")}</p>`; return; }
       if(r.status===503||r.status===404){ liveOff=true; note.textContent="Live answers aren't switched on for this site, so Plop gives basic lookups from the analysis."; bubble.innerHTML=md(fallback(q)); return; }
-      bubble.innerHTML=`<p class="hint">${esc(j.error||"Plop couldn't answer just now. Ask again.")}</p>`; return;
+      bubble.innerHTML=`<p class="hint">${esc(j.error||"Plop couldn't answer just now. Ask again.")}${j.detail?"<br><small>"+esc(j.detail)+"</small>":""}</p>`; return;
     }
     bubble.innerHTML=md(j.text)+(j.truncated?"<p class='hint'>Answer cut short. Ask for less at a time.</p>":"");
     turns.push({role:"assistant",content:j.text});

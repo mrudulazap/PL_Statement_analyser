@@ -50,6 +50,24 @@ const SCHEMA = {
   required: ["found", "pl_csv", "bs_csv", "unit", "basis", "notes"],
 };
 
+// Calls Gemini once, and once more after a short pause if it is briefly overloaded (500/503).
+async function gemini(model, key, payload) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+  let r, j;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key.trim() }, body: JSON.stringify(payload) });
+    j = await r.json().catch(() => ({}));
+    if (r.ok || (r.status !== 500 && r.status !== 503)) break;
+    await new Promise((ok) => setTimeout(ok, 1500));
+  }
+  return { r, j };
+}
+// Short, safe description of a Gemini failure to show the site owner (never includes the key).
+function why(r, j) {
+  const m = String(j?.error?.message || "").replace(/AIza[0-9A-Za-z_-]{20,}/g, "[key]").slice(0, 180);
+  return `Gemini ${r.status}${j?.error?.status ? " " + j.error.status : ""}${m ? ": " + m : ""}`;
+}
+
 function yearColumns(csv) {
   const first = String(csv || "").split(/\r?\n/).find((l) => l.trim()) || "";
   return Math.max(0, first.split(",").length - 1);
@@ -86,19 +104,16 @@ export default async function handler(req, res) {
   };
 
   try {
-    const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL)}:generateContent`,
-      { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key }, body: JSON.stringify(payload) }
-    );
-    const j = await r.json().catch(() => ({}));
+    const { r, j } = await gemini(MODEL, key, payload);
     if (!r.ok) {
-      console.error("Gemini extract error", r.status, j?.error?.message);
-      if (r.status === 429) return res.status(429).json({ error: "PDF reading is busy right now. Try again in a minute." });
-      return res.status(502).json({ error: "Couldn't read that PDF just now. Try again, or copy the table into Excel." });
+      console.error("Gemini extract error", why(r, j));
+      if (r.status === 429) return res.status(429).json({ error: "PDF reading is busy right now. Try again in a minute.", detail: why(r, j) });
+      return res.status(502).json({ error: "Couldn't read that PDF just now. Try again, or copy the table into Excel.", detail: why(r, j) });
     }
     const raw = (j.candidates?.[0]?.content?.parts || []).map((p) => p.text || "").join("");
     let out;
     try { out = JSON.parse(raw); } catch { out = null; }
+    if (!out) console.error("Extract: unparseable reply", j.candidates?.[0]?.finishReason, raw.slice(0, 200));
     if (!out || !out.found || yearColumns(out.pl_csv) < 1) {
       return res.status(422).json({ error: "Couldn't find a full-year profit and loss statement in this PDF." });
     }
@@ -111,6 +126,6 @@ export default async function handler(req, res) {
     });
   } catch (e) {
     console.error("Extract failure", e);
-    return res.status(502).json({ error: "Couldn't read that PDF just now. Try again, or copy the table into Excel." });
+    return res.status(502).json({ error: "Couldn't read that PDF just now. Try again, or copy the table into Excel.", detail: "Server: " + String(e && e.message).slice(0, 160) });
   }
 }
