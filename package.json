@@ -1,0 +1,8 @@
+{
+  "name": "driftline",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DriftLine: P&L and balance-sheet cost diagnostic with the Plop analyst chat",
+  "type": "module",
+  "engines": { "node": ">=20" }
+}
