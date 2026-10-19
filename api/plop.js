@@ -1,7 +1,7 @@
 // Plop: DriftLine's analyst chat. Vercel serverless function that calls Google Gemini.
 // Needs the GEMINI_API_KEY environment variable in Vercel. GEMINI_MODEL is optional.
 
-import { gemini, why } from "./_gemini.js";
+import { gemini, why, busy } from "./_gemini.js";
 
 const MAX_DATA_CHARS = 16000;   // analysis JSON sent by the page
 const MAX_MSG_CHARS = 1200;     // one chat message
@@ -71,6 +71,7 @@ export default async function handler(req, res) {
     const { r, j } = await gemini(key, payload);
     if (!r.ok) {
       console.error("Gemini error", why(r, j));
+      if (busy(r)) return res.status(429).json({ error: "Google's AI service is very busy right now. Ask again in a minute.", detail: why(r, j) });
       if (r.status === 429) return res.status(429).json({ error: "Plop is busy right now. Try again in a minute.", detail: why(r, j) });
       return res.status(502).json({ error: "Plop couldn't answer just now. Ask again.", detail: why(r, j) });
     }

@@ -3,7 +3,7 @@
 // asks Gemini to find the full-year P&L and balance sheet in it.
 // Needs GEMINI_API_KEY. Nothing is stored.
 
-import { gemini, why } from "./_gemini.js";
+import { gemini, why, busy } from "./_gemini.js";
 
 const MAX_TEXT = 90000;
 
@@ -90,6 +90,7 @@ export default async function handler(req, res) {
     const { r, j } = await gemini(key, payload);
     if (!r.ok) {
       console.error("Gemini extract error", why(r, j));
+      if (busy(r)) return res.status(429).json({ error: "Google's AI service is very busy right now. Wait a minute and try again.", detail: why(r, j) });
       if (r.status === 429) return res.status(429).json({ error: "PDF reading is busy right now. Try again in a minute.", detail: why(r, j) });
       return res.status(502).json({ error: "Couldn't read that PDF just now. Try again, or copy the table into Excel.", detail: why(r, j) });
     }
