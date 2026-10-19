@@ -16,6 +16,7 @@ Server functions:
 
 | File | What it does |
 |---|---|
+| `api/_gemini.js` | Shared Gemini caller: retries when overloaded, finds a replacement model if one is retired, drops settings a model rejects |
 | `api/plop.js` | Plop chat. Holds Plop's instructions and calls Gemini with your key |
 | `api/extract.js` | PDF import. Receives the text of the statement pages (extracted in the browser by pdf.js) and asks Gemini for the full-year P&L and balance sheet as CSV |
 | `api/waitlist.js` | "Get updates" form. Forwards each sign-up to a webhook, such as a Google Sheet |
@@ -31,7 +32,7 @@ Fonts are self-hosted in `assets/fonts` (Bricolage Grotesque and IBM Plex, both 
 | Name | Needed for | Notes |
 |---|---|---|
 | `GEMINI_API_KEY` | Plop's live answers and PDF import | From Google AI Studio. Without it, Plop gives basic lookups and PDFs show a "not switched on" message |
-| `GEMINI_MODEL` | Optional | Defaults to `gemini-2.5-flash` |
+| `GEMINI_MODEL` | Optional | Defaults to `gemini-3.8-flash`. If Google retires the model, DriftLine switches to the newest available stable Flash model automatically (see `api/_gemini.js`) |
 | `WAITLIST_WEBHOOK_URL` | "Get updates" sign-ups | Without it, the form tells visitors sign-ups open shortly |
 
 Redeploy after adding or changing a variable.

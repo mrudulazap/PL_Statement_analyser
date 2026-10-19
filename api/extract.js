@@ -3,7 +3,8 @@
 // asks Gemini to find the full-year P&L and balance sheet in it.
 // Needs GEMINI_API_KEY. Nothing is stored.
 
-const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+import { gemini, why } from "./_gemini.js";
+
 const MAX_TEXT = 90000;
 
 const WINDOW_MS = 10 * 60 * 1000;
@@ -50,23 +51,6 @@ const SCHEMA = {
   required: ["found", "pl_csv", "bs_csv", "unit", "basis", "notes"],
 };
 
-// Calls Gemini once, and once more after a short pause if it is briefly overloaded (500/503).
-async function gemini(model, key, payload) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
-  let r, j;
-  for (let attempt = 0; attempt < 2; attempt++) {
-    r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key.trim() }, body: JSON.stringify(payload) });
-    j = await r.json().catch(() => ({}));
-    if (r.ok || (r.status !== 500 && r.status !== 503)) break;
-    await new Promise((ok) => setTimeout(ok, 1500));
-  }
-  return { r, j };
-}
-// Short, safe description of a Gemini failure to show the site owner (never includes the key).
-function why(r, j) {
-  const m = String(j?.error?.message || "").replace(/AIza[0-9A-Za-z_-]{20,}/g, "[key]").slice(0, 180);
-  return `Gemini ${r.status}${j?.error?.status ? " " + j.error.status : ""}${m ? ": " + m : ""}`;
-}
 
 function yearColumns(csv) {
   const first = String(csv || "").split(/\r?\n/).find((l) => l.trim()) || "";
@@ -99,12 +83,11 @@ export default async function handler(req, res) {
       maxOutputTokens: 6000,
       responseMimeType: "application/json",
       responseSchema: SCHEMA,
-      thinkingConfig: { thinkingBudget: 1024 },
     },
   };
 
   try {
-    const { r, j } = await gemini(MODEL, key, payload);
+    const { r, j } = await gemini(key, payload);
     if (!r.ok) {
       console.error("Gemini extract error", why(r, j));
       if (r.status === 429) return res.status(429).json({ error: "PDF reading is busy right now. Try again in a minute.", detail: why(r, j) });
@@ -112,7 +95,7 @@ export default async function handler(req, res) {
     }
     const raw = (j.candidates?.[0]?.content?.parts || []).map((p) => p.text || "").join("");
     let out;
-    try { out = JSON.parse(raw); } catch { out = null; }
+    try { out = JSON.parse(raw.replace(/^\s*```(?:json)?\s*|\s*```\s*$/g, "")); } catch { out = null; }
     if (!out) console.error("Extract: unparseable reply", j.candidates?.[0]?.finishReason, raw.slice(0, 200));
     if (!out || !out.found || yearColumns(out.pl_csv) < 1) {
       return res.status(422).json({ error: "Couldn't find a full-year profit and loss statement in this PDF." });
