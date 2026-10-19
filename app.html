@@ -148,7 +148,7 @@ td.num,th.num{text-align:right;white-space:nowrap}
       <section class="card" aria-labelledby="upTitle">
         <div class="eyebrow">Step 1</div>
         <h2 id="upTitle">Add your statements</h2>
-        <p class="hint">One row per line item, one column per financial year. Excel or CSV. <button type="button" class="linkbtn" id="tplBtn">Download a template</button></p>
+        <p class="hint">One row per line item, one column per financial year. Excel or CSV (PDFs aren't supported yet). <button type="button" class="linkbtn" id="tplBtn">Download a template</button></p>
         <div class="drops">
           <label class="drop" id="plDrop">
             <span class="ic"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5h7l4 4V17a.5.5 0 01-.5.5h-10A.5.5 0 015 17z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 11h5M8 14h5M8 8h2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
@@ -300,16 +300,27 @@ function toNum(s){
   let neg=false; if(/^\(.*\)$/.test(s)){neg=true;s=s.slice(1,-1);}
   s=s.replace(/[,₹$€£\s]/g,""); const n=parseFloat(s); if(isNaN(n)) return null; return neg?-n:n;
 }
+const YEAR_RE=/(fy\s*'?\d{2,4}|\b(19|20)\d{2}\b|\b\d{1,2}[-.\/]\d{1,2}[-.\/]\d{2,4}\b|\b(mar|march|dec|december|jun|june|sep|sept|september)[a-z]*[-\s'.,]*\d{2,4})/i;
 function parseTable(text){
-  const lines=text.split(/\r?\n/).filter(l=>l.trim());
+  const lines=text.split(/\r?\n/).filter(l=>l.replace(/[,;\t\s"]/g,"").length);
   if(lines.length<2) return null;
-  const delim=lines[0].includes("\t")?"\t":(lines[0].includes(";")&&!lines[0].includes(",")?";":",");
-  const head=splitLine(lines[0],delim).map(s=>s.trim());
-  let years=head.slice(1).filter(Boolean);
+  const sample=lines.slice(0,20).join("\n");
+  const delim=sample.includes("\t")?"\t":(sample.split(";").length>sample.split(",").length?";":",");
+  // Header = first row (within the first 15) with at least two year-like cells, so title rows above it are skipped.
+  let hi=-1;
+  for(let i=0;i<Math.min(15,lines.length);i++){
+    const c=splitLine(lines[i],delim).map(x=>x.trim());
+    if(c.slice(1).filter(x=>YEAR_RE.test(x)).length>=2){hi=i;break;}
+  }
+  const yearHeader=hi>=0; if(!yearHeader) hi=0;
+  const head=splitLine(lines[hi],delim).map(x=>x.trim());
+  // Keep the column index of each year so blank or "Note" columns can't shift values into the wrong year.
+  const cols=[]; head.forEach((h,i)=>{ if(i>0&&h&&(!yearHeader||YEAR_RE.test(h))) cols.push(i); });
+  let years=cols.map(i=>head[i]);
   let rows=[];
-  for(const l of lines.slice(1)){
+  for(const l of lines.slice(hi+1)){
     const cells=splitLine(l,delim); const label=(cells[0]||"").trim(); if(!label) continue;
-    const vals=years.map((_,i)=>toNum(cells[i+1]));
+    const vals=cols.map(i=>toNum(cells[i]));
     if(vals.every(v=>v===null)) continue;
     rows.push({label,vals:vals.map(v=>v??0)});
   }
@@ -371,7 +382,7 @@ const pct=(a,b)=>b?a/b*100:0;
 const cagr=(a,b,n)=>(a>0&&b>0&&n>0)?(Math.pow(b/a,1/n)-1)*100:null;
 function analyse(plText, bsText){
   const pl=parseTable(plText); if(!pl) throw new Error("The P&L needs a header row of years and at least one line item.");
-  if(pl.years.length<2) throw new Error("Add at least two years of P&L. Three or more makes trends meaningful.");
+  if(pl.years.length<2) throw new Error(`I found ${pl.years.length} year column${pl.years.length===1?"":"s"}${pl.years.length?" ("+pl.years.join(", ")+")":""}. Put each financial year in its own column, with the years in the header row. Two years is the minimum; three or more makes trends meaningful.`);
   const {res:P,unmatched}=mapRows(pl,PL_MAP,PL_SKIP);
   if(!P.revenue) throw new Error("No revenue line found. Name it 'Revenue', 'Revenue from operations', 'Net sales' or 'Turnover'.");
   const Y=pl.years, n=Y.length, L=n-1, rev=P.revenue.vals;
@@ -577,20 +588,30 @@ document.getElementById("sampleBtn").onclick=loadSample;
 [plT,bsT].forEach(t=>t.addEventListener("input",()=>{setStatus(true);}));
 async function readFile(file,target){
   errEl.textContent="";
+  const ext=(file.name.split(".").pop()||"").toLowerCase();
+  if(!["csv","tsv","txt","xlsx","xls"].includes(ext)){
+    errEl.textContent=ext==="pdf"
+      ?"That's a PDF. DriftLine reads Excel or CSV files for now. Copy the P&L table into Excel with one column per year (or fill in the template), then upload that."
+      :"DriftLine reads Excel (.xlsx, .xls) or CSV files. Save your statement in one of those formats and try again.";
+    window.dlTrack("diagnostic_error",{reason:"unsupported_file_"+ext.slice(0,5)});
+    return false;
+  }
   try{
-    if(/\.xlsx?$/i.test(file.name)){
-      if(typeof XLSX==="undefined") throw new Error("Excel reader did not load. Save the sheet as CSV and upload that.");
+    if(ext==="xlsx"||ext==="xls"){
+      if(typeof XLSX==="undefined") throw new Error("The Excel reader didn't load. Check your connection, or save the sheet as CSV and upload that.");
       const wb=XLSX.read(await file.arrayBuffer(),{type:"array"});
-      target.value=XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]]);
+      target.value=XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]],{blankrows:false});
     } else target.value=await file.text();
-    setStatus(true);
-  }catch(e){ errEl.textContent=e.message||"Could not read that file."; }
+    setStatus(true); return true;
+  }catch(e){ errEl.textContent=e.message||"Couldn't read that file."; return false; }
 }
 function setStatus(own){flag.textContent=own?"Showing your statements":"Showing the example company (fictional)";flag.classList.toggle("own",own);}
-async function takeFile(file,target,nameEl){ window.dlTrack("file_upload",{statement:target===plT?"pl":"bs",format:(file.name.split(".").pop()||"").toLowerCase().slice(0,5)}); nameEl.textContent=file.name; nameEl.className="file";
+async function takeFile(file,target,nameEl){ window.dlTrack("file_upload",{statement:target===plT?"pl":"bs",format:(file.name.split(".").pop()||"").toLowerCase().slice(0,5)});
+  const ok=await readFile(file,target);
+  if(!ok){ nameEl.className=""; nameEl.textContent=target===plT?"Drop a file here, or click to browse":"Optional. Adds working-capital cash."; return; }
+  nameEl.textContent=file.name; nameEl.className="file";
   if(target===plT&&bsT.value===SAMPLE_BS) bsT.value="";   // never mix the user's P&L with the example balance sheet
   if(target===bsT&&plT.value===SAMPLE_PL) plT.value="";
-  await readFile(file,target);
   if(plT.value.trim()) run(); else { errEl.textContent="Balance sheet added. Now add your P&L to run the diagnostic."; } }
 [["plFile","plDrop","plName",plT],["bsFile","bsDrop","bsName",bsT]].forEach(([fid,did,nid,t])=>{
   const inp=document.getElementById(fid), drop=document.getElementById(did), nm=document.getElementById(nid);
