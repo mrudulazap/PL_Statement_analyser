@@ -3,9 +3,9 @@
 // asks Gemini to find the full-year P&L and balance sheet in it.
 // Needs GEMINI_API_KEY. Nothing is stored.
 
-import { gemini, why, busy } from "./_gemini.js";
+import { gemini, why, busy, timedOut } from "./_gemini.js";
 
-const MAX_TEXT = 90000;
+const MAX_TEXT = 40000;
 
 const WINDOW_MS = 10 * 60 * 1000;
 const MAX_PER_WINDOW = 8;
@@ -80,16 +80,18 @@ export default async function handler(req, res) {
     contents: [{ role: "user", parts: [{ text: "PDF TEXT:\n\n" + text }] }],
     generationConfig: {
       temperature: 0,
-      maxOutputTokens: 6000,
+      maxOutputTokens: 4000,
+      thinkingConfig: { thinkingLevel: "low" }, // dropped automatically if a model rejects it
       responseMimeType: "application/json",
       responseSchema: SCHEMA,
     },
   };
 
   try {
-    const { r, j } = await gemini(key, payload);
+    const { r, j } = await gemini(key, payload, 52000);
     if (!r.ok) {
       console.error("Gemini extract error", why(r, j));
+      if (timedOut(r)) return res.status(504).json({ error: "Reading this PDF took too long. Try again, or upload just the pages with the financial statements.", detail: why(r, j) });
       if (busy(r)) return res.status(429).json({ error: "Google's AI service is very busy right now. Wait a minute and try again.", detail: why(r, j) });
       if (r.status === 429) return res.status(429).json({ error: "PDF reading is busy right now. Try again in a minute.", detail: why(r, j) });
       return res.status(502).json({ error: "Couldn't read that PDF just now. Try again, or copy the table into Excel.", detail: why(r, j) });

@@ -676,12 +676,13 @@ async function pdfPages(file){
   }
   return pages;
 }
-// Send only the pages that look like financial statements, up to a size cap.
-function pickPages(pages,cap=88000){
-  const total=pages.reduce((s,p)=>s+p.length,0);
-  if(total<=cap) return pages.map((p,i)=>`[Page ${i+1}]\n${p}`).join("\n\n");
-  const KW=/profit and loss|statement of profit|revenue from operations|total income|expenses|balance sheet|assets and liabilities|inventories|trade receivables|trade payables|borrowings|employee benefit|finance costs|depreciation/gi;
-  const scored=pages.map((p,i)=>({i,p,s:(p.match(KW)||[]).length})).filter(x=>x.s>=3).sort((a,b)=>b.s-a.s);
+// Send only statement pages, and only their lines that carry numbers or headings, up to a size cap.
+// Keeps the request small so Gemini answers well inside the server's time limit.
+function pickPages(pages,cap=30000){
+  const KEEP=/\d|particular|statement|year ended|as at|crore|lakh|million|consolidated|standalone|income|expense|assets|liabilit|equity/i;
+  const compact=p=>p.split("\n").filter(l=>KEEP.test(l)&&l.replace(/[\s|]/g,"").length>1).join("\n");
+  const KW=/profit and loss|statement of profit|revenue from operations|total income|total expenses|balance sheet|assets and liabilities|inventories|trade receivables|trade payables|borrowings|employee benefit|finance costs|depreciation|cost of materials/gi;
+  const scored=pages.map((p,i)=>({i,p:compact(p),s:(p.match(KW)||[]).length})).filter(x=>x.s>=2).sort((a,b)=>b.s-a.s);
   const keep=[]; let used=0;
   for(const x of scored){ if(used+x.p.length>cap) continue; keep.push(x); used+=x.p.length; }
   return keep.sort((a,b)=>a.i-b.i).map(x=>`[Page ${x.i+1}]\n${x.p}`).join("\n\n");
@@ -696,7 +697,7 @@ async function importPdf(file,target,nameEl){
     text=pickPages(pages);
     if(!text) return fail("Couldn't find financial statement pages in this PDF.","no_statements");
   }catch(e){ return fail(/password/i.test(e&&e.name||"")?"This PDF is password-protected. Remove the password and try again.":(e.message||"Couldn't open that PDF."),"open_failed"); }
-  setPdfState("Finding the full-year statements… this can take up to a minute.");
+  setPdfState("Finding the full-year statements… this usually takes 15 to 40 seconds.");
   let r,j;
   try{ r=await fetch("/api/extract",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text})}); j=await r.json().catch(()=>({})); }
   catch(_){ return fail("Couldn't reach DriftLine's PDF reader. Check your connection and try again.","network"); }
