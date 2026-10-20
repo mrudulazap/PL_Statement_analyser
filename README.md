@@ -9,7 +9,7 @@ Live: https://driftline-amber.vercel.app · Built by [Mrudula Kavuri](https://mr
 | URL | File | What it is |
 |---|---|---|
 | `/` | `index.html` | Landing page: value, how it works, free for everyone, what's next with an updates sign-up, FAQ |
-| `/app` | `app.html` | The free diagnostic. Analysis runs entirely in the browser |
+| `/app` | `app.html` | The free diagnostic. Starts empty; shows a report only from the visitor's own statements. Analysis runs in the browser |
 | `/case-study` | `case-study.html` | Partner-style critique, MSME market sizing and 18-month roadmap |
 
 Server functions:
@@ -70,7 +70,7 @@ Events recorded (besides automatic page views):
 | Event | When | Parameters |
 |---|---|---|
 | `cta_click` | A tracked button is clicked | `location`, `target` |
-| `diagnostic_run` | A report is produced | `source` (example or own), `years`, `has_balance_sheet` |
+| `diagnostic_run` | A report is produced | `source` (always own), `years`, `has_balance_sheet` |
 | `own_diagnostic` | A report is produced from the visitor's own statements | `years` |
 | `diagnostic_error` | Statements can't be read | `reason` (DriftLine's own error message) |
 | `file_upload` | A statement file is added | `statement` (pl or bs), `format` |

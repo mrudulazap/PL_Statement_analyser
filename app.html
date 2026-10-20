@@ -13,8 +13,6 @@
 body{font-size:15px;background:var(--bg-2)}
 .appbar{background:rgba(255,255,255,.92)}
 .appbar .wrap{max-width:1360px}
-.appbar .crumb{color:var(--muted);font-size:14px;padding-left:16px;margin-left:4px;border-left:1px solid var(--line)}
-@media (max-width:560px){.appbar .crumb{display:none}}
 .shell{max-width:1360px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));padding-block:28px 64px}
 .page-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;margin-bottom:20px}
 .page-head h1{font-size:clamp(24px,2.6vw,30px);font-weight:700}
@@ -106,6 +104,13 @@ td.num,th.num{text-align:right;white-space:nowrap}
 .limits{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px 24px}
 .limits h3{font-size:17px}
 .limits ul{margin:8px 0 0;padding-left:18px;color:var(--muted)}
+.empty{background:var(--surface);border:1px dashed var(--line-strong);border-radius:12px;padding:44px 28px;text-align:center}
+.empty .ic{width:48px;height:48px;border-radius:12px;background:var(--brand-soft);color:var(--brand);display:grid;place-items:center;margin:0 auto 16px}
+.empty h2{font-size:18px;font-weight:600;margin:0 0 6px}
+.empty p{color:var(--muted);font-size:14.5px;max-width:46ch;margin:0 auto}
+.empty ul{list-style:none;padding:0;margin:18px auto 0;display:inline-grid;gap:8px;text-align:left;font-size:14px;color:var(--ink-2)}
+.empty li::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--brand);margin-right:10px;vertical-align:middle}
+.chat form input:disabled{background:var(--bg-2)}
 .upsell{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;background:var(--brand-soft);border:1px solid #cfe6e0;border-radius:12px;padding:22px 24px}
 .upsell h3{font-size:17px}
 .upsell p{color:var(--muted);font-size:14.5px;margin-top:4px;max-width:56ch}
@@ -143,7 +148,6 @@ td.num,th.num{text-align:right;white-space:nowrap}
       <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="var(--brand)"/><path d="M5.5 19.5h17" stroke="var(--on-brand)" stroke-opacity=".5" stroke-width="1.8" stroke-dasharray="2 2.4"/><path d="M5.5 19.5C11 19.5 13 15.5 16 13.5S20 9.5 22 8.5" fill="none" stroke="var(--on-brand)" stroke-width="2.2" stroke-linecap="round"/><circle cx="22" cy="8.5" r="2.7" fill="var(--drift)"/></svg>
       DriftLine
     </a>
-    <span class="crumb">Diagnostic</span>
     <nav class="nav-links" aria-label="Main">
       <a class="hide-sm" href="/#how">How it works</a>
       <a class="hide-sm" href="/#faq">FAQ</a>
@@ -154,7 +158,7 @@ td.num,th.num{text-align:right;white-space:nowrap}
 <div class="shell">
   <div class="page-head">
     <div><h1>Cost diagnostic</h1><p>Upload three or more years of statements. Everything is read and analysed in your browser; AI is used only if a PDF needs it, and only if you agree.</p></div>
-    <span class="status" id="exampleFlag">Showing the example company (fictional)</span>
+    <span class="status own" id="exampleFlag" hidden>Report from your statements</span>
   </div>
 
   <div class="layout">
@@ -177,7 +181,6 @@ td.num,th.num{text-align:right;white-space:nowrap}
         </div>
         <div class="actions">
           <button class="btn primary" id="runBtn">Analyse</button>
-          <button class="btn" id="sampleBtn">Use example company</button>
           <label class="unit" for="unitIn">Units <input id="unitIn" type="text" value="₹ Cr"></label>
         </div>
         <p class="err" id="errMsg" role="alert"></p>
@@ -228,33 +231,6 @@ td.num,th.num{text-align:right;white-space:nowrap}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
 <script>
-/* ===================== Example data (fictional) ===================== */
-const SAMPLE_PL = `Line item,FY22,FY23,FY24,FY25
-Revenue from operations,820,905,960,1010
-Other income,12,14,11,13
-Cost of materials consumed,492,552,595,631
-Employee benefits expense,74,80,88,97
-Power and fuel,33,38,43,47
-Freight and forwarding,25,29,33,37
-Advertising and sales promotion,12,14,15,15
-Repairs and maintenance,9,10,12,14
-Rent,6,6.5,7,7.5
-Travel and conveyance,4,5.5,6.5,7.2
-Legal and professional fees,3.5,4,5.2,6.1
-Other expenses,18,20,23,26
-Depreciation and amortisation,22,24,27,30
-Finance costs,14,16,19,22
-Tax expense,30,30,24.5,21`;
-const SAMPLE_BS = `Line item,FY22,FY23,FY24,FY25
-Property plant and equipment,330,360,395,430
-Inventories,118,138,160,182
-Trade receivables,112,128,145,162
-Cash and cash equivalents,28,22,18,15
-Total assets,640,720,800,880
-Total equity,410,470,516,568
-Borrowings,120,150,180,210
-Trade payables,82,88,92,95`;
-
 /* ===================== Lever library ===================== */
 const CATS = {
   materials:{name:"Materials / COGS", ctrl:true, risk:"",
@@ -509,7 +485,7 @@ function marginChart(A){
 let A=null, CAPTURE=50;
 function render(){
   const R=document.getElementById("results");
-  if(!A){R.innerHTML="";return;}
+  if(!A){R.innerHTML=`<div class="empty"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16M7 16V10M12 16V6M17 16v-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div><h2>Your report will appear here</h2><p>Add your profit and loss statement above. DriftLine reads it in your browser and builds the report from your figures only.</p><ul><li>Cost lines compared with your best year</li><li>Rupee value of the drift, at a recovery rate you choose</li><li>Cash tied up in working capital, if you add a balance sheet</li></ul></div>`;return;}
   const L=A.L, cap=CAPTURE/100;
   const eM=A.ebitda.map((x,i)=>pct(x,A.rev[i])), pM=A.pbt.map((x,i)=>pct(x,A.rev[i]));
   const ops=A.lines.filter(l=>l.ctrl&&l.gap>0).sort((a,b)=>b.gap-a.gap);
@@ -608,14 +584,14 @@ function headline(A,eM,ops,totalGap){
 const plT=document.getElementById("plText"), bsT=document.getElementById("bsText"), errEl=document.getElementById("errMsg"), flag=document.getElementById("exampleFlag");
 function run(){
   errEl.textContent=""; UNIT=document.getElementById("unitIn").value.trim()||"units";
-  try{ A=analyse(plT.value,bsT.value); render(); resetChat();
-    window.dlTrack("diagnostic_run",{source:flag.classList.contains("own")?"own":"example",years:A.n,has_balance_sheet:A.WC?"yes":"no"}); if(flag.classList.contains("own")) window.dlTrack("own_diagnostic",{years:A.n}); }
-  catch(e){ errEl.textContent=e.message; window.dlTrack("diagnostic_error",{reason:String(e.message).slice(0,90)}); }
+  if(!plT.value.trim()){ errEl.textContent="Add your profit and loss statement first: upload a file, or paste the numbers."; return; }
+  try{ A=analyse(plT.value,bsT.value); setStatus(true); render(); resetChat();
+    window.dlTrack("diagnostic_run",{source:"own",years:A.n,has_balance_sheet:A.WC?"yes":"no"}); window.dlTrack("own_diagnostic",{years:A.n});
+    document.getElementById("results").scrollIntoView({behavior:"smooth",block:"start"}); }
+  catch(e){ A=null; setStatus(false); render(); resetChat(); errEl.textContent=e.message; window.dlTrack("diagnostic_error",{reason:String(e.message).slice(0,90)}); }
 }
-function loadSample(){ if(typeof reviewNote!=="undefined"){reviewNote.hidden=true;pdfAsk.hidden=true;setPdfState("");} ["plName","bsName"].forEach((id,i)=>{const n=document.getElementById(id);n.className="";n.textContent=i?"Optional. Adds working-capital cash.":"Drop a file here, or click to browse";}); plT.value=SAMPLE_PL; bsT.value=SAMPLE_BS; setStatus(false); document.getElementById("unitIn").value="₹ Cr"; run(); }
 document.getElementById("runBtn").onclick=run;
-document.getElementById("sampleBtn").onclick=loadSample;
-[plT,bsT].forEach(t=>t.addEventListener("input",()=>{setStatus(true);}));
+
 async function readFile(file,target){
   errEl.textContent="";
   const ext=(file.name.split(".").pop()||"").toLowerCase();
@@ -633,7 +609,7 @@ async function readFile(file,target){
     setStatus(true); return true;
   }catch(e){ errEl.textContent=e.message||"Couldn't read that file."; return false; }
 }
-function setStatus(own){flag.textContent=own?"Showing your statements":"Showing the example company (fictional)";flag.classList.toggle("own",own);}
+function setStatus(own){flag.hidden=!own;}
 async function takeFile(file,target,nameEl){ window.dlTrack("file_upload",{statement:target===plT?"pl":"bs",format:(file.name.split(".").pop()||"").toLowerCase().slice(0,5)});
   reviewNote.hidden=true;
   if(/\.pdf$/i.test(file.name)){ startPdf(file,target,nameEl); return; }
@@ -641,8 +617,6 @@ async function takeFile(file,target,nameEl){ window.dlTrack("file_upload",{state
   const ok=await readFile(file,target);
   if(!ok){ nameEl.className=""; nameEl.textContent=target===plT?"Drop a file here, or click to browse":"Optional. Adds working-capital cash."; return; }
   nameEl.textContent=file.name; nameEl.className="file";
-  if(target===plT&&bsT.value===SAMPLE_BS) bsT.value="";   // never mix the user's P&L with the example balance sheet
-  if(target===bsT&&plT.value===SAMPLE_PL) plT.value="";
   if(plT.value.trim()) run(); else { errEl.textContent="Balance sheet added. Now add your P&L to run the diagnostic."; } }
 [["plFile","plDrop","plName",plT],["bsFile","bsDrop","bsName",bsT]].forEach(([fid,did,nid,t])=>{
   const inp=document.getElementById(fid), drop=document.getElementById(did), nm=document.getElementById(nid);
@@ -828,11 +802,10 @@ async function importPdfWithAI(p){
 }
 function applyPdf(p,j,viaAI){
   const {file,target}=p;
-  const replacePL=target===plT||!plT.value.trim()||plT.value===SAMPLE_PL;
+  const replacePL=target===plT||!plT.value.trim();
   if(replacePL) plT.value=j.pl;
   const plName=document.getElementById("plName"), bsName=document.getElementById("bsName");
-  if(j.bs&&(target===bsT||!bsT.value.trim()||bsT.value===SAMPLE_BS)){ bsT.value=j.bs; bsName.textContent=(target===bsT?"":"From ")+file.name; bsName.className="file"; }
-  else if(!j.bs&&bsT.value===SAMPLE_BS){ bsT.value=""; bsName.textContent=DEFAULT_LABEL.bs; bsName.className=""; }
+  if(j.bs&&(target===bsT||!bsT.value.trim())){ bsT.value=j.bs; bsName.textContent=(target===bsT?"":"From ")+file.name; bsName.className="file"; }
   if(replacePL){ plName.textContent=(target===plT?"":"From ")+file.name; plName.className="file"; }
   if(j.unit) document.getElementById("unitIn").value=j.unit;
   setStatus(true);
@@ -859,8 +832,9 @@ function md(t){
 function addMsg(role,html){const d=document.createElement("div");d.className="msg "+role;d.innerHTML=html;log.appendChild(d);log.scrollTop=log.scrollHeight;return d;}
 function resetChat(){
   turns=[]; log.innerHTML="";
-  addMsg("bot",md(A?`I'm Plop. I have the statements for ${A.Y[0]}–${A.Y[A.L]}. Ask me about margins, specific cost lines or working capital. I will say when the statements can't answer something.`:"Load statements to start."));
-  chipsEl.innerHTML=CHIPS.map(c=>`<button type="button">${esc(c)}</button>`).join("");
+  addMsg("bot",md(A?`I'm Plop. I have your statements for ${A.Y[0]}–${A.Y[A.L]}. Ask me about margins, specific cost lines or working capital. I will say when the statements can't answer something.`:"I'm Plop. Add your statements and I'll answer questions about them: why margins moved, which costs to look at first, and what data to pull."));
+  inp.disabled=!A; sendB.disabled=!A; inp.placeholder=A?"Ask about your costs…":"Add your statements first";
+  chipsEl.innerHTML=A?CHIPS.map(c=>`<button type="button">${esc(c)}</button>`).join(""):"";
   chipsEl.querySelectorAll("button").forEach(b=>b.onclick=()=>{inp.value=b.textContent;form.requestSubmit();});
 }
 function context(){
@@ -884,7 +858,7 @@ function fallback(q){
   return ops.length?`Largest gaps to best year:\n${ops.slice(0,4).map(l=>`- ${l.label}: ${money(l.gap)}`).join("\n")}`:"No cost line is above its best year.";
 }
 form.addEventListener("submit",async e=>{
-  e.preventDefault(); const q=inp.value.trim(); if(!q||ctl) return;
+  e.preventDefault(); const q=inp.value.trim(); if(!q||ctl||!A) return;
   window.dlTrack("plop_question",{suggested:CHIPS.includes(q)?"yes":"no"});
   inp.value=""; addMsg("user",esc(q)); const bubble=addMsg("bot","<p>Thinking…</p>");
   const slow=setTimeout(()=>{ if(/Thinking/.test(bubble.textContent)) bubble.innerHTML="<p>Still thinking… answers can take up to half a minute when Google's AI is busy.</p>"; },8000);
@@ -912,7 +886,7 @@ form.addEventListener("submit",async e=>{
 });
 stopB.onclick=()=>ctl&&ctl.abort();
 
-loadSample();
+render(); resetChat();
 
 </script>
 </body>
