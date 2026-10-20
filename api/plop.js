@@ -68,7 +68,7 @@ export default async function handler(req, res) {
   };
 
   try {
-    const { r, j } = await gemini(key, payload, 25000);
+    const { r, j } = await gemini(key, payload, 55000, { preferLite: true, override: process.env.GEMINI_CHAT_MODEL });
     if (!r.ok) {
       console.error("Gemini error", why(r, j));
       if (timedOut(r)) return res.status(504).json({ error: "Plop took too long to answer. Ask again, or ask something shorter.", detail: why(r, j) });

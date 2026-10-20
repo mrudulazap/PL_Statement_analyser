@@ -83,13 +83,14 @@ function stripOptional(payload) {
 }
 
 // budgetMs: how long this whole call may take, including retries and fallbacks.
-// preferLite: start with a fast Lite model (good for simple table extraction), if one is available.
-export async function gemini(key, payload, budgetMs = 25000, { preferLite = false } = {}) {
+// preferLite: start with a fast Lite model (good for table extraction and short chat answers), if one is available;
+// override: a specific model name to use instead of the Lite lookup.
+export async function gemini(key, payload, budgetMs = 25000, { preferLite = false, override = "" } = {}) {
   key = String(key || "").trim();
   const deadline = Date.now() + budgetMs;
   let model = discovered || DEFAULT_MODEL;
   if (preferLite) {
-    const lite = process.env.GEMINI_EXTRACT_MODEL || (await flashModels(key)).find((n) => /lite/.test(n) && !/preview|exp/.test(n));
+    const lite = override || (await flashModels(key)).find((n) => /lite/.test(n) && !/preview|exp/.test(n));
     if (lite) model = lite;
   }
   let { r, j } = await post(model, key, payload, deadline);

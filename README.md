@@ -32,6 +32,7 @@ Fonts are self-hosted in `assets/fonts` (Bricolage Grotesque and IBM Plex, both 
 | Name | Needed for | Notes |
 |---|---|---|
 | `GEMINI_API_KEY` | Plop's live answers and PDF import | From Google AI Studio. Without it, Plop gives basic lookups and PDFs show a "not switched on" message |
+| `GEMINI_CHAT_MODEL` | Optional | Model for Plop. Defaults to the newest stable Flash Lite model on your key, for fast answers |
 | `GEMINI_EXTRACT_MODEL` | Optional | Model for AI PDF reading. Defaults to the newest stable Flash Lite model on your key |
 | `GEMINI_MODEL` | Optional | Defaults to `gemini-3.8-flash`. If Google retires the model, DriftLine switches to the newest available stable Flash model automatically (see `api/_gemini.js`) |
 | `WAITLIST_WEBHOOK_URL` | "Get updates" sign-ups | Without it, the form tells visitors sign-ups open shortly |

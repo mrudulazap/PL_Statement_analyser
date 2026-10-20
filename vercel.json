@@ -29,7 +29,7 @@
       "maxDuration": 120
     },
     "api/plop.js": {
-      "maxDuration": 30
+      "maxDuration": 60
     }
   }
 }

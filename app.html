@@ -882,6 +882,7 @@ form.addEventListener("submit",async e=>{
   e.preventDefault(); const q=inp.value.trim(); if(!q||ctl) return;
   window.dlTrack("plop_question",{suggested:CHIPS.includes(q)?"yes":"no"});
   inp.value=""; addMsg("user",esc(q)); const bubble=addMsg("bot","<p>Thinking…</p>");
+  const slow=setTimeout(()=>{ if(/Thinking/.test(bubble.textContent)) bubble.innerHTML="<p>Still thinking… answers can take up to half a minute when Google's AI is busy.</p>"; },8000);
   if(liveOff){ bubble.innerHTML=md(fallback(q)); return; }
   turns.push({role:"user",content:q}); if(turns.length>12) turns=turns.slice(-12); if(turns[0].role!=="user") turns.shift();
   ctl=new AbortController(); sendB.disabled=true; stopB.hidden=false;
@@ -902,7 +903,7 @@ form.addEventListener("submit",async e=>{
     turns.pop();
     if(err&&err.name==="AbortError"){ bubble.innerHTML="<p class='hint'>Stopped.</p>"; }
     else { bubble.innerHTML=md(fallback(q))+"<p class='hint'>Couldn't reach Plop's live service, so this is a basic lookup.</p>"; }
-  }finally{ ctl=null; sendB.disabled=false; stopB.hidden=true; }
+  }finally{ clearTimeout(slow); ctl=null; sendB.disabled=false; stopB.hidden=true; }
 });
 stopB.onclick=()=>ctl&&ctl.abort();
 
