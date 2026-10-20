@@ -1,82 +1,73 @@
-/* DriftLine shared styles: brand tokens, type, nav, buttons, footer.
-   Layout concept: a finance ledger made friendly. Teal "baseline" brand colour,
-   burnt-orange "drift" colour reserved for costs that crept up. */
+/* DriftLine design system.
+   Clean light fintech: white and soft-grey surfaces, deep navy type, the logo's teal as the only accent.
+   Orange ("drift") appears only inside data, to mark costs that crept up. One typeface: Inter. */
 
-@font-face{font-family:"Bricolage Grotesque";font-weight:600;font-display:swap;src:url(/assets/fonts/bricolage-grotesque-latin-600-normal.woff2) format("woff2")}
-@font-face{font-family:"Bricolage Grotesque";font-weight:700;font-display:swap;src:url(/assets/fonts/bricolage-grotesque-latin-700-normal.woff2) format("woff2")}
-@font-face{font-family:"Bricolage Grotesque";font-weight:800;font-display:swap;src:url(/assets/fonts/bricolage-grotesque-latin-800-normal.woff2) format("woff2")}
-@font-face{font-family:"IBM Plex Sans";font-weight:400;font-display:swap;src:url(/assets/fonts/ibm-plex-sans-latin-400-normal.woff2) format("woff2")}
-@font-face{font-family:"IBM Plex Sans";font-weight:500;font-display:swap;src:url(/assets/fonts/ibm-plex-sans-latin-500-normal.woff2) format("woff2")}
-@font-face{font-family:"IBM Plex Sans";font-weight:600;font-display:swap;src:url(/assets/fonts/ibm-plex-sans-latin-600-normal.woff2) format("woff2")}
-@font-face{font-family:"IBM Plex Mono";font-weight:400;font-display:swap;src:url(/assets/fonts/ibm-plex-mono-latin-400-normal.woff2) format("woff2")}
-@font-face{font-family:"IBM Plex Mono";font-weight:500;font-display:swap;src:url(/assets/fonts/ibm-plex-mono-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:400;font-display:swap;src:url(/assets/fonts/inter-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:500;font-display:swap;src:url(/assets/fonts/inter-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:600;font-display:swap;src:url(/assets/fonts/inter-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:700;font-display:swap;src:url(/assets/fonts/inter-latin-700-normal.woff2) format("woff2")}
 
 :root{
-  --bg:#f5f7f6; --bg-2:#eaf0ee; --surface:#ffffff; --sunken:#eef2f1;
-  --ink:#0e1a22; --muted:#56636d; --line:#dfe5e3; --line-strong:#c9d3d0;
-  --brand:#0b6e5f; --brand-strong:#08574b; --brand-soft:#e2f0ec; --on-brand:#ffffff;
-  --drift:#c8601a; --drift-soft:#fbebdd;
-  --good:#23845a; --good-soft:#e1f2e9; --warn:#a86a08; --warn-soft:#f8ecd4; --bad:#b23a3a; --bad-soft:#f6e0e0;
-  --shadow:0 1px 2px rgba(14,26,34,.05),0 8px 28px rgba(14,26,34,.07);
-  --f-display:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif;
-  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
-  --radius:10px; --max:1160px;
+  color-scheme:light;
+  --bg:#ffffff; --bg-2:#f6f8fa; --surface:#ffffff; --sunken:#f2f5f8;
+  --ink:#0f1e2e; --ink-2:#334155; --muted:#5f6c7b; --faint:#8a96a3;
+  --line:#e5e9ef; --line-strong:#d3dae3;
+  --brand:#0b6e5f; --brand-strong:#08594d; --brand-soft:#e8f3f0; --on-brand:#ffffff;
+  --navy:#0f1e2e; --on-navy:#e9eef4; --on-navy-muted:#a9b6c4;
+  --drift:#d9773a; --drift-soft:#fbeee4;
+  --good:#1f7a4d; --good-soft:#e7f4ec; --warn:#9a5b06; --warn-soft:#fdf3e1; --bad:#b42318; --bad-soft:#fdecea;
+  --shadow-sm:0 1px 2px rgba(15,30,46,.05);
+  --shadow:0 1px 2px rgba(15,30,46,.04),0 16px 40px -12px rgba(15,30,46,.16);
+  --f-display:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-body:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --radius:12px; --max:1120px;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0b1216; --bg-2:#0f1a1f; --surface:#121c22; --sunken:#17232a;
-  --ink:#e6edea; --muted:#95a5a1; --line:#22313a; --line-strong:#2e404a;
-  --brand:#3fbfa5; --brand-strong:#66d4bd; --brand-soft:#10302a; --on-brand:#06201b;
-  --drift:#f0954a; --drift-soft:#3a2414;
-  --good:#6cc08f; --good-soft:#17301f; --warn:#e2ad4f; --warn-soft:#33270f; --bad:#e58080; --bad-soft:#3a1a1a;
-  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35); color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#0b1216; --bg-2:#0f1a1f; --surface:#121c22; --sunken:#17232a;
-  --ink:#e6edea; --muted:#95a5a1; --line:#22313a; --line-strong:#2e404a;
-  --brand:#3fbfa5; --brand-strong:#66d4bd; --brand-soft:#10302a; --on-brand:#06201b;
-  --drift:#f0954a; --drift-soft:#3a2414;
-  --good:#6cc08f; --good-soft:#17301f; --warn:#e2ad4f; --warn-soft:#33270f; --bad:#e58080; --bad-soft:#3a1a1a;
-  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35); color-scheme:dark}
 
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;font-feature-settings:"cv11","ss01"}
 img{max-width:100%;height:auto;display:block}
 [hidden]{display:none!important}
-a{color:var(--brand)}
-:focus-visible{outline:2px solid var(--brand);outline-offset:3px;border-radius:4px}
-.wrap{max-width:var(--max);margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
-h1,h2,h3{font-family:var(--f-display);letter-spacing:-.02em;text-wrap:balance;margin:0}
+a{color:var(--brand);text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--brand);outline-offset:3px;border-radius:6px}
+.wrap{max-width:var(--max);margin:0 auto;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px))}
+h1,h2,h3,h4{font-family:var(--f-display);color:var(--ink);text-wrap:balance;margin:0;letter-spacing:-.02em}
+h1{font-weight:700;letter-spacing:-.03em}
+h2{font-weight:700}
+h3{font-weight:600;letter-spacing:-.01em}
 p{margin:0}
-.mono{font-family:var(--f-mono)}
-.eyebrow{font:500 12px/1.3 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--brand)}
-.num{font-variant-numeric:tabular-nums}
+.num,.mono{font-variant-numeric:tabular-nums}
+.eyebrow{font:600 14px/1.4 var(--f-body);color:var(--brand);letter-spacing:0}
 
 /* nav */
-.nav{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
-.nav .wrap{display:flex;align-items:center;gap:24px;height:64px}
-.logo{display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);font:800 20px/1 var(--f-display);letter-spacing:-.03em}
+.nav{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.88);backdrop-filter:saturate(1.6) blur(12px);-webkit-backdrop-filter:saturate(1.6) blur(12px);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+.nav .wrap{display:flex;align-items:center;gap:24px;height:68px}
+.logo{display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);font:700 19px/1 var(--f-display);letter-spacing:-.025em}
 .logo svg{flex:none}
-.nav-links{display:flex;gap:4px;margin-left:auto;align-items:center}
-.nav-links a{color:var(--muted);text-decoration:none;font-weight:500;font-size:15px;padding:8px 12px;border-radius:8px}
+.nav-links{display:flex;gap:2px;margin-left:auto;align-items:center}
+.nav-links a{color:var(--ink-2);text-decoration:none;font-weight:500;font-size:15px;padding:8px 14px;border-radius:8px}
 .nav-links a:hover{color:var(--ink);background:var(--sunken)}
-.nav-links .btn{margin-left:8px}
+.nav-links .btn{margin-left:10px}
 @media (max-width:760px){.nav-links a.hide-sm{display:none}}
 
 /* buttons */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:600 15px/1 var(--f-body);text-decoration:none;border-radius:9px;padding:12px 18px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);cursor:pointer;transition:transform .12s ease,background .12s ease,border-color .12s ease}
-.btn:hover{border-color:var(--ink)}
-.btn:active{transform:translateY(1px)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:600 15px/1 var(--f-body);text-decoration:none;border-radius:8px;padding:12px 18px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);cursor:pointer;box-shadow:var(--shadow-sm);transition:background .15s ease,border-color .15s ease,color .15s ease}
+.btn:hover{border-color:var(--faint);background:var(--bg-2)}
 .btn.primary{background:var(--brand);border-color:var(--brand);color:var(--on-brand)}
+.nav-links .btn.primary,.btn.primary{color:var(--on-brand)}
 .btn.primary:hover{background:var(--brand-strong);border-color:var(--brand-strong)}
+.btn.ghost{background:transparent;border-color:transparent;box-shadow:none;color:var(--brand)}
+.btn.ghost:hover{background:var(--brand-soft)}
 .btn.lg{padding:15px 22px;font-size:16px}
 .btn.sm{padding:9px 14px;font-size:14px}
 .btn:disabled{opacity:.55;cursor:default}
 
 /* footer */
-.foot{border-top:1px solid var(--line);margin-top:96px;padding-block:40px calc(40px + env(safe-area-inset-bottom,0px));color:var(--muted);font-size:14px}
+.foot{border-top:1px solid var(--line);padding-block:36px calc(36px + env(safe-area-inset-bottom,0px));color:var(--muted);font-size:14px;background:var(--bg)}
 .foot .wrap{display:flex;flex-wrap:wrap;gap:16px 32px;align-items:center;justify-content:space-between}
-.foot nav{display:flex;flex-wrap:wrap;gap:20px}
+.foot nav{display:flex;flex-wrap:wrap;gap:22px}
 .foot a{color:var(--muted);text-decoration:none}
 .foot a:hover{color:var(--ink)}
+.analytics-note{color:var(--faint)}

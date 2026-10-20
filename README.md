@@ -25,7 +25,7 @@ Analytics: `assets/analytics.js` loads Google Analytics for Firebase using `asse
 
 pdf.js 3.11.174 is self-hosted in `assets/vendor` (Apache 2.0) and only loads when someone adds a PDF.
 
-Fonts are self-hosted in `assets/fonts` (Bricolage Grotesque and IBM Plex, both under the SIL Open Font License).
+Inter is self-hosted in `assets/fonts` (SIL Open Font License).
 
 ## Environment variables (Vercel → Settings → Environment Variables)
 
