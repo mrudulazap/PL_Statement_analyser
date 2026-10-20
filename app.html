@@ -111,9 +111,6 @@ td.num,th.num{text-align:right;white-space:nowrap}
 .empty ul{list-style:none;padding:0;margin:18px auto 0;display:inline-grid;gap:8px;text-align:left;font-size:14px;color:var(--ink-2)}
 .empty li::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--brand);margin-right:10px;vertical-align:middle}
 .chat form input:disabled{background:var(--bg-2)}
-.upsell{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;background:var(--brand-soft);border:1px solid #cfe6e0;border-radius:12px;padding:22px 24px}
-.upsell h3{font-size:17px}
-.upsell p{color:var(--muted);font-size:14.5px;margin-top:4px;max-width:56ch}
 
 /* chat */
 .chat{position:sticky;top:calc(env(safe-area-inset-top,0px) + 80px);display:flex;flex-direction:column;max-height:calc(100vh - 100px);min-height:520px;padding:0;overflow:hidden}
@@ -201,10 +198,6 @@ td.num,th.num{text-align:right;white-space:nowrap}
 
       <div id="results" class="stack"></div>
 
-      <aside class="upsell">
-        <div><h3>Free for everyone, and getting better</h3><p>Next up: importing straight from Tally and Zoho Books, industry comparisons, and a PDF report for your bank or board.</p></div>
-        <a class="btn" href="/#next" data-track="cta_click" data-track-location="app_footer" data-track-target="updates">Get updates</a>
-      </aside>
     </div>
 
     <aside class="card chat" aria-label="Plop, the DriftLine analyst">
