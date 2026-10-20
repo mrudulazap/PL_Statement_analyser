@@ -53,7 +53,9 @@ function version(name) {
   return m ? parseFloat(m[1]) : 0;
 }
 
+let listCache = { at: 0, names: [] };
 async function flashModels(key) {
+  if (Date.now() - listCache.at < 10 * 60 * 1000 && listCache.names.length) return listCache.names;
   try {
     const r = await fetch(`${BASE}/models?pageSize=200`, { headers: { "x-goog-api-key": key } });
     const j = await r.json().catch(() => ({}));
@@ -63,6 +65,7 @@ async function flashModels(key) {
       .filter((n) => /^gemini-[\d.]+-flash/.test(n) && !/image|tts|live|audio|embed|thinking-exp/i.test(n));
     // Prefer full Flash over Lite, stable over preview/experimental, then the highest version.
     names.sort((a, b) => (/lite/.test(a) - /lite/.test(b)) || (/preview|exp/.test(a) - /preview|exp/.test(b)) || version(b) - version(a) || a.length - b.length);
+    listCache = { at: Date.now(), names };
     return names;
   } catch {
     return [];
@@ -80,10 +83,15 @@ function stripOptional(payload) {
 }
 
 // budgetMs: how long this whole call may take, including retries and fallbacks.
-export async function gemini(key, payload, budgetMs = 25000) {
+// preferLite: start with a fast Lite model (good for simple table extraction), if one is available.
+export async function gemini(key, payload, budgetMs = 25000, { preferLite = false } = {}) {
   key = String(key || "").trim();
   const deadline = Date.now() + budgetMs;
   let model = discovered || DEFAULT_MODEL;
+  if (preferLite) {
+    const lite = process.env.GEMINI_EXTRACT_MODEL || (await flashModels(key)).find((n) => /lite/.test(n) && !/preview|exp/.test(n));
+    if (lite) model = lite;
+  }
   let { r, j } = await post(model, key, payload, deadline);
 
   if (r.status === 404) {

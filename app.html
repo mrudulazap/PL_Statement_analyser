@@ -148,7 +148,7 @@ td.num,th.num{text-align:right;white-space:nowrap}
 
 <div class="shell">
   <div class="page-head">
-    <div><h1>Cost diagnostic</h1><p>Upload three or more years of statements. The analysis runs in your browser; PDFs are read with AI only if you agree.</p></div>
+    <div><h1>Cost diagnostic</h1><p>Upload three or more years of statements. Everything is read and analysed in your browser; AI is used only if a PDF needs it, and only if you agree.</p></div>
     <span class="status" id="exampleFlag">Showing the example company (fictional)</span>
   </div>
 
@@ -177,7 +177,7 @@ td.num,th.num{text-align:right;white-space:nowrap}
         </div>
         <p class="err" id="errMsg" role="alert"></p>
         <div class="pdfask" id="pdfAsk" hidden>
-          <div><b id="pdfAskTitle">Read this PDF with AI?</b><p>DriftLine will send the text of the statement pages, not the file itself, to Google Gemini to find the full-year P&amp;L and balance sheet. Nothing is stored. You check the numbers before relying on the report.</p></div>
+          <div><b id="pdfAskTitle">This PDF's layout needs AI to read. Use it?</b><p>DriftLine couldn't read this layout on your device. With your OK, it sends the text of the statement pages, not the file itself, to Google Gemini to find the full-year P&amp;L and balance sheet. Nothing is stored. You check the numbers before relying on the report.</p></div>
           <div class="row"><button class="btn primary sm" id="pdfYes" type="button">Read PDF</button><button class="btn sm" id="pdfNo" type="button">Cancel</button></div>
         </div>
         <div class="pdfstate" id="pdfState" role="status" hidden></div>
@@ -621,7 +621,7 @@ async function readFile(file,target){
 function setStatus(own){flag.textContent=own?"Showing your statements":"Showing the example company (fictional)";flag.classList.toggle("own",own);}
 async function takeFile(file,target,nameEl){ window.dlTrack("file_upload",{statement:target===plT?"pl":"bs",format:(file.name.split(".").pop()||"").toLowerCase().slice(0,5)});
   reviewNote.hidden=true;
-  if(/\.pdf$/i.test(file.name)){ askPdf(file,target,nameEl); return; }
+  if(/\.pdf$/i.test(file.name)){ startPdf(file,target,nameEl); return; }
   pdfAsk.hidden=true;
   const ok=await readFile(file,target);
   if(!ok){ nameEl.className=""; nameEl.textContent=target===plT?"Drop a file here, or click to browse":"Optional. Adds working-capital cash."; return; }
@@ -642,20 +642,19 @@ document.getElementById("tplBtn").onclick=()=>{
   const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"})); a.download="driftline-template.csv"; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
 };
 /* ===================== PDF import ===================== */
+// Order of attempts: (1) read the statement tables in the browser, no AI, nothing leaves the device;
+// (2) only if that fails, ask the visitor before sending the statement text to Gemini.
 const pdfAsk=document.getElementById("pdfAsk"), pdfState=document.getElementById("pdfState"), reviewNote=document.getElementById("reviewNote"), reviewText=document.getElementById("reviewText");
 const DEFAULT_LABEL={pl:"Drop a file here, or click to browse",bs:"Optional. Adds working-capital cash."};
 let pendingPdf=null;
-function askPdf(file,target,nameEl){
-  errEl.textContent=""; pendingPdf={file,target,nameEl};
-  nameEl.textContent=file.name+" · waiting for your OK"; nameEl.className="";
-  pdfAsk.hidden=false; document.getElementById("pdfYes").focus();
-}
+function setPdfState(t){ pdfState.hidden=!t; pdfState.textContent=t||""; }
+function pdfFail(p,msg,result){ setPdfState(""); errEl.textContent=msg; p.nameEl.textContent=DEFAULT_LABEL[p.target===plT?"pl":"bs"]; p.nameEl.className=""; window.dlTrack("pdf_extract",{result}); }
 document.getElementById("pdfNo").onclick=()=>{
-  if(pendingPdf){ pendingPdf.nameEl.textContent=DEFAULT_LABEL[pendingPdf.target===plT?"pl":"bs"]; pendingPdf=null; }
+  if(pendingPdf){ pendingPdf.nameEl.textContent=DEFAULT_LABEL[pendingPdf.target===plT?"pl":"bs"]; pendingPdf.nameEl.className=""; pendingPdf=null; }
   pdfAsk.hidden=true; window.dlTrack("pdf_extract",{result:"declined"});
 };
-document.getElementById("pdfYes").onclick=()=>{ const p=pendingPdf; pendingPdf=null; pdfAsk.hidden=true; if(p) importPdf(p.file,p.target,p.nameEl); };
-function setPdfState(t){ pdfState.hidden=!t; pdfState.textContent=t||""; }
+document.getElementById("pdfYes").onclick=()=>{ const p=pendingPdf; pendingPdf=null; pdfAsk.hidden=true; if(p) importPdfWithAI(p); };
+
 let pdfLib=null;
 async function loadPdfJs(){
   if(pdfLib) return pdfLib;
@@ -663,6 +662,7 @@ async function loadPdfJs(){
   window.pdfjsLib.GlobalWorkerOptions.workerSrc="/assets/vendor/pdf.worker.min.js";
   return (pdfLib=window.pdfjsLib);
 }
+// Text of each page, one line per visual row, cells separated by " | ".
 async function pdfPages(file){
   const lib=await loadPdfJs();
   const doc=await lib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
@@ -671,13 +671,105 @@ async function pdfPages(file){
     if(i===1||i%5===0) setPdfState(`Reading page ${i} of ${N}…`);
     const tc=await (await doc.getPage(i)).getTextContent();
     const rows=new Map();
-    for(const it of tc.items){ const t=(it.str||"").trim(); if(!t) continue; const y=Math.round(it.transform[5]/3); if(!rows.has(y)) rows.set(y,[]); rows.get(y).push([it.transform[4],t]); }
-    pages.push([...rows.entries()].sort((a,b)=>b[0]-a[0]).map(([,r])=>r.sort((a,b)=>a[0]-b[0]).map(x=>x[1]).join(" | ")).join("\n"));
+    for(const it of tc.items){ const t=(it.str||"").trim(); if(!t) continue; const y=Math.round(it.transform[5]/3); if(!rows.has(y)) rows.set(y,[]); rows.get(y).push([it.transform[4],t,it.width||0]); }
+    pages.push([...rows.entries()].sort((a,b)=>b[0]-a[0]).map(([,r])=>{
+      r.sort((a,b)=>a[0]-b[0]);
+      // Merge fragments of one cell (small horizontal gap), split cells on larger gaps.
+      const cells=[]; let cur=null;
+      for(const [x,t,w] of r){ if(cur&&x-(cur.x+cur.w)<4){ cur.t+=(x-(cur.x+cur.w)>1?" ":"")+t; cur.w=x+w-cur.x; } else { cur={x,t,w}; cells.push(cur); } }
+      return cells.map(c=>c.t).join(" | ");
+    }).join("\n"));
   }
   return pages;
 }
+
+/* ---------- (1) In-browser table reader ---------- */
+const DATE_G=/\b(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})\b|\b(?:\d{1,2}(?:st|nd|rd|th)?\s+)?(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b[,\s'.-]*(\d{4})\b/gi;
+const hasDate=s=>new RegExp(DATE_G.source,"i").test(s);
+const PERIOD_G=/(half[- ]year|six months|6 months|nine months|9 months|quarter|three months|3 months|twelve months|12 months|year)\s*(?:ended|ending)/gi;
+function fyLabel(m){
+  let y=m[3]||m[5]; y=+y; if(y<100) y+=2000;
+  return "FY"+String(y%100).padStart(2,"0");
+}
+const isNumCell=c=>/^\(?[-–]?\s?[\d,]+(\.\d+)?\)?$|^[-–—]$|^nil$/i.test(c.replace(/\s/g,""));
+function numOf(c){ c=c.replace(/\s/g,""); if(/^[-–—]$|^nil$/i.test(c)) return 0; const neg=/^\(.*\)$/.test(c)||/^[-–]/.test(c); const v=parseFloat(c.replace(/[(),\-–]/g,"")); return isNaN(v)?null:(neg?-v:v); }
+function rowOf(line){
+  const c=line.split(" | ").map(s=>s.trim()).filter(Boolean);
+  let k=c.length; while(k>0&&isNumCell(c[k-1])) k--;
+  const label=c.slice(0,k).join(" ").replace(/^(\(?[ivxlc]{1,4}\)|\(?[a-h]\)|\d{1,2}[.)])\s+/i,"").replace(/\s+/g," ").trim();
+  return {label,nums:c.slice(k).map(numOf)};
+}
+// Reads one statement table from a page: finds the header with dates, decides which columns are full years.
+function readTable(page,{fullYearOnly}){
+  const lines=page.split("\n");
+  const isYearNum=v=>v!=null&&Number.isInteger(v)&&v>=1990&&v<=2100;
+  const rows=lines.map((l,i)=>({i,...rowOf(l)})).filter(r=>r.nums.length>=1&&/[a-z]{3}/i.test(r.label)
+    &&!/^(page|note|notes)\b|ended|as at|particulars/i.test(r.label)&&!r.nums.every(isYearNum));
+  if(rows.length<4) return null;
+  const first=rows[0].i;
+  const hdr=lines.slice(Math.max(0,first-10),first).filter(l=>l.includes(" | ")||hasDate(l));
+  let best=null;
+  for(const l of hdr){ const ds=[...l.matchAll(DATE_G)]; if(ds.length&&(!best||ds.length>best.ds.length)) best={l,ds}; }
+  if(!best) return null;
+  const nd=best.ds.length, labels=best.ds.map(fyLabel);
+  let keep=labels.map(()=>true);
+  if(fullYearOnly){
+    const toks=[...hdr.filter(l=>l.includes(" | ")||l===best.l).join(" || ").matchAll(PERIOD_G)].map(m=>/^(twelve|12|year)/i.test(m[1]));
+    if(toks.length===nd) keep=toks;
+    else{ const ny=toks.filter(Boolean).length, nq=toks.length-ny; if(nq>0&&ny>0&&ny<nd) keep=labels.map((_,i)=>i>=nd-ny); }
+  }
+  const cols=labels.map((l,i)=>i).filter(i=>keep[i]);
+  const chosen=cols.map(i=>labels[i]);
+  if(chosen.length<1||new Set(chosen).size!==chosen.length) return null; // ambiguous header
+  const out=[];
+  for(const r of rows){
+    if(r.nums.length<nd) continue;
+    const vals=r.nums.slice(-nd); // trailing numbers; a leading Note number is dropped
+    out.push({label:r.label,vals:cols.map(i=>vals[i])});
+  }
+  if(out.length<3) return null;
+  // oldest year first
+  const order=chosen.map((l,k)=>({l,k})).sort((a,b)=>parseInt(a.l.slice(2))-parseInt(b.l.slice(2)));
+  const q=s=>/[",]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;
+  const csv=["Line item,"+order.map(o=>o.l).join(",")].concat(out.map(r=>q(r.label)+","+order.map(o=>r.vals[o.k]==null?0:r.vals[o.k]).join(","))).join("\n");
+  return {csv,years:order.length};
+}
+function readPdfLocally(pages){
+  const score=(p,re)=>(p.match(re)||[]).length;
+  const PL=/revenue from operations|total income|total expenses|cost of materials|employee benefits?|finance costs|depreciation|profit before tax/gi;
+  const BS=/total assets|total equity|inventories|trade receivables|trade payables|borrowings|equity share capital|property, plant/gi;
+  const cons=pages.some(p=>/consolidated/i.test(p));
+  const rank=(re,bad)=>pages.map((p,i)=>({p,i,s:score(p,re)-(bad?score(p,bad):0)+(cons&&/consolidated/i.test(p)?3:0)})).filter(x=>x.s>=3).sort((a,b)=>b.s-a.s);
+  let pl=null, plPage=null;
+  for(const x of rank(PL,/segment/gi).slice(0,6)){ const t=readTable(x.p,{fullYearOnly:true}); if(t&&/revenue|sales|income from operations/i.test(t.csv)){ pl=t; plPage=x; break; } }
+  if(!pl) return null;
+  try{ analyse(pl.csv,""); }catch(_){ return null; }
+  let bs=null;
+  for(const x of rank(BS).slice(0,4)){ if(x.i===plPage.i) continue; const t=readTable(x.p,{fullYearOnly:false}); if(t&&/inventor|receivable|payable|borrowing|total assets/i.test(t.csv)){ bs=t; break; } }
+  const txt=plPage.p;
+  const unit=/crore/i.test(txt)?"₹ Cr":/lakh/i.test(txt)?"₹ lakh":/million/i.test(txt)?"₹ million":/thousand/i.test(txt)?"₹ thousand":"";
+  return {pl:pl.csv,bs:bs?bs.csv:"",unit,basis:/consolidated/i.test(txt)?"Consolidated":/standalone/i.test(txt)?"Standalone":"",years:pl.years};
+}
+
+/* ---------- Flow ---------- */
+async function startPdf(file,target,nameEl){
+  errEl.textContent=""; reviewNote.hidden=true; pdfAsk.hidden=true;
+  const p={file,target,nameEl,pages:null};
+  nameEl.textContent=file.name+" · reading…"; nameEl.className="";
+  try{ p.pages=await pdfPages(file); }
+  catch(e){ return pdfFail(p,/password/i.test(e&&e.name||"")?"This PDF is password-protected. Remove the password and try again.":(e.message||"Couldn't open that PDF."),"open_failed"); }
+  if(p.pages.join("").replace(/\s/g,"").length<200) return pdfFail(p,"This PDF has almost no readable text. It may be a scanned image, which DriftLine can't read yet. Try the company's digital results PDF, or copy the table into Excel.","scanned");
+  setPdfState("Looking for the statements…");
+  let local=null; try{ local=readPdfLocally(p.pages); }catch(e){ console.warn("Local PDF reader failed",e); }
+  setPdfState("");
+  if(local){ applyPdf(p,local,false); return; }
+  // Couldn't read the tables on this device: offer AI, with consent.
+  pendingPdf=p;
+  nameEl.textContent=file.name+" · waiting for your OK";
+  document.getElementById("pdfAskTitle").textContent="This PDF's layout needs AI to read. Use it?";
+  pdfAsk.hidden=false; document.getElementById("pdfYes").focus();
+}
 // Send only statement pages, and only their lines that carry numbers or headings, up to a size cap.
-// Keeps the request small so Gemini answers well inside the server's time limit.
 function pickPages(pages,cap=30000){
   const KEEP=/\d|particular|statement|year ended|as at|crore|lakh|million|consolidated|standalone|income|expense|assets|liabilit|equity/i;
   const compact=p=>p.split("\n").filter(l=>KEEP.test(l)&&l.replace(/[\s|]/g,"").length>1).join("\n");
@@ -687,36 +779,35 @@ function pickPages(pages,cap=30000){
   for(const x of scored){ if(used+x.p.length>cap) continue; keep.push(x); used+=x.p.length; }
   return keep.sort((a,b)=>a.i-b.i).map(x=>`[Page ${x.i+1}]\n${x.p}`).join("\n\n");
 }
-async function importPdf(file,target,nameEl){
-  errEl.textContent=""; reviewNote.hidden=true; nameEl.textContent=file.name+" · reading…";
-  const fail=(msg,result)=>{ setPdfState(""); errEl.textContent=msg; nameEl.textContent=DEFAULT_LABEL[target===plT?"pl":"bs"]; nameEl.className=""; window.dlTrack("pdf_extract",{result}); };
-  let text;
-  try{
-    const pages=await pdfPages(file);
-    if(pages.join("").replace(/\s/g,"").length<200) return fail("This PDF has almost no readable text. It may be a scanned image, which DriftLine can't read yet. Try the company's digital results PDF, or copy the table into Excel.","scanned");
-    text=pickPages(pages);
-    if(!text) return fail("Couldn't find financial statement pages in this PDF.","no_statements");
-  }catch(e){ return fail(/password/i.test(e&&e.name||"")?"This PDF is password-protected. Remove the password and try again.":(e.message||"Couldn't open that PDF."),"open_failed"); }
-  setPdfState("Finding the full-year statements… this usually takes 15 to 40 seconds.");
+async function importPdfWithAI(p){
+  const text=pickPages(p.pages);
+  if(!text) return pdfFail(p,"Couldn't find financial statement pages in this PDF.","no_statements");
+  p.nameEl.textContent=p.file.name+" · reading with AI…";
+  setPdfState("Reading the statements with AI… this can take up to a minute.");
   let r,j;
   try{ r=await fetch("/api/extract",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text})}); j=await r.json().catch(()=>({})); }
-  catch(_){ return fail("Couldn't reach DriftLine's PDF reader. Check your connection and try again.","network"); }
-  if(!r.ok) return fail((j.error||"Couldn't read that PDF. Try again, or copy the table into Excel.")+(j.detail?" ("+j.detail+")":(r.status>=500&&!j.error?` (Server ${r.status}${r.status===504?": the PDF took too long to read":""})`:"")),r.status===503?"off":r.status===422?"not_found":"failed");
+  catch(_){ return pdfFail(p,"Couldn't reach DriftLine's PDF reader. Check your connection and try again.","network"); }
+  if(!r.ok) return pdfFail(p,(j.error||"Couldn't read that PDF. Try again, or copy the table into Excel.")+(j.detail?" ("+j.detail+")":(r.status>=500&&!j.error?` (Server ${r.status}${r.status===504?": the PDF took too long to read":""})`:"")),r.status===503?"off":r.status===422?"not_found":r.status===504?"timeout":"failed");
   setPdfState("");
-  if(!j.pl) return fail("Couldn't find a full-year profit and loss statement in this PDF.","not_found");
+  if(!j.pl) return pdfFail(p,"Couldn't find a full-year profit and loss statement in this PDF.","not_found");
+  applyPdf(p,j,true);
+}
+function applyPdf(p,j,viaAI){
+  const {file,target}=p;
   const replacePL=target===plT||!plT.value.trim()||plT.value===SAMPLE_PL;
   if(replacePL) plT.value=j.pl;
   const plName=document.getElementById("plName"), bsName=document.getElementById("bsName");
   if(j.bs&&(target===bsT||!bsT.value.trim()||bsT.value===SAMPLE_BS)){ bsT.value=j.bs; bsName.textContent=(target===bsT?"":"From ")+file.name; bsName.className="file"; }
-  else if(!j.bs&&bsT.value===SAMPLE_BS){ bsT.value=""; }
+  else if(!j.bs&&bsT.value===SAMPLE_BS){ bsT.value=""; bsName.textContent=DEFAULT_LABEL.bs; bsName.className=""; }
   if(replacePL){ plName.textContent=(target===plT?"":"From ")+file.name; plName.className="file"; }
   if(j.unit) document.getElementById("unitIn").value=j.unit;
   setStatus(true);
-  reviewText.innerHTML=`<b>Read from your PDF by AI.</b> ${esc(j.basis&&j.basis!=="Not stated"?j.basis+" figures":"Figures")}${j.unit?" in "+esc(j.unit):""}. Check them against the PDF before relying on the report: open “Paste or edit the numbers” below to see and correct them.${j.notes?" "+esc(j.notes):""}`;
+  const basis=j.basis&&j.basis!=="Not stated"?j.basis+" figures":"Figures";
+  reviewText.innerHTML=`<b>Read from your PDF${viaAI?" by AI":""}.</b> ${esc(basis)}${j.unit?" in "+esc(j.unit):""}, full-year columns only${j.bs?"":"; no balance sheet found"}. Check them against the PDF before relying on the report: open “Paste or edit the numbers” below to see and correct them.${j.notes?" "+esc(j.notes):""}`;
   reviewNote.hidden=false;
   document.getElementById("rawBox").open=true;
   run();
-  window.dlTrack("pdf_extract",{result:"ok",years:A?A.n:0,has_balance_sheet:j.bs?"yes":"no"});
+  window.dlTrack("pdf_extract",{result:"ok",method:viaAI?"ai":"local",years:A?A.n:0,has_balance_sheet:j.bs?"yes":"no"});
 }
 /* ===================== Chat ===================== */
 const log=document.getElementById("chatLog"), chipsEl=document.getElementById("chatChips"), form=document.getElementById("chatForm"), inp=document.getElementById("chatIn"), sendB=document.getElementById("chatSend"), stopB=document.getElementById("chatStop"), note=document.getElementById("chatNote");

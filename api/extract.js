@@ -88,7 +88,7 @@ export default async function handler(req, res) {
   };
 
   try {
-    const { r, j } = await gemini(key, payload, 52000);
+    const { r, j } = await gemini(key, payload, 110000, { preferLite: true });
     if (!r.ok) {
       console.error("Gemini extract error", why(r, j));
       if (timedOut(r)) return res.status(504).json({ error: "Reading this PDF took too long. Try again, or upload just the pages with the financial statements.", detail: why(r, j) });

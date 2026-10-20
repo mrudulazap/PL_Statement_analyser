@@ -32,6 +32,7 @@ Fonts are self-hosted in `assets/fonts` (Bricolage Grotesque and IBM Plex, both 
 | Name | Needed for | Notes |
 |---|---|---|
 | `GEMINI_API_KEY` | Plop's live answers and PDF import | From Google AI Studio. Without it, Plop gives basic lookups and PDFs show a "not switched on" message |
+| `GEMINI_EXTRACT_MODEL` | Optional | Model for AI PDF reading. Defaults to the newest stable Flash Lite model on your key |
 | `GEMINI_MODEL` | Optional | Defaults to `gemini-3.8-flash`. If Google retires the model, DriftLine switches to the newest available stable Flash model automatically (see `api/_gemini.js`) |
 | `WAITLIST_WEBHOOK_URL` | "Get updates" sign-ups | Without it, the form tells visitors sign-ups open shortly |
 
@@ -89,9 +90,9 @@ Both functions limit requests per visitor, but serverless copies don't share mem
 
 ## PDF import
 
-1. The visitor adds a PDF. DriftLine asks before sending anything.
-2. pdf.js extracts the text in the browser. If the PDF is long, only pages that look like financial statements are kept (up to about 88,000 characters).
-3. `api/extract.js` asks Gemini for full-year columns only (quarters are ignored), consolidated over standalone, totals and EPS left out, numbers copied exactly. The reply is structured JSON.
+1. The visitor adds a PDF. pdf.js extracts the text in the browser.
+2. **In-browser reader first.** DriftLine finds the profit and loss page (consolidated if present), reads the column headers, keeps only full-year columns (quarters ignored), drops note numbers, and reads the balance sheet the same way. No AI is used and nothing leaves the device.
+3. **AI only if needed.** If the layout can't be read locally, DriftLine asks first, then sends only the statement lines (up to 30,000 characters) to `api/extract.js`, which uses a fast Gemini Lite model when available (`GEMINI_EXTRACT_MODEL` overrides it) with a 110-second budget.
 4. Both statements are filled in, the units are set, and a banner asks the visitor to check the numbers. The raw figures open for editing.
 
 Scanned (image-only) PDFs and password-protected PDFs get a clear message instead.
