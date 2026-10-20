@@ -346,8 +346,9 @@ function parseTable(text){
   }
   return {years,rows};
 }
-const PL_SKIP=/total|profit|ebitda|\bpbt\b|\bpat\b|margin|earnings per|loss before|loss after|exceptional/i;
+const PL_SKIP=/total|profit|ebitda|\bpbt\b|\bpat\b|margin|earnings per|loss before|loss after|exceptional|comprehensive|discontinued|associates?\b|joint ventures?|share of (net )?(profit|loss)|non-controlling|owners of|attributable|reclassif|hedg|remeasurement|fair value|translation|items that|paid[- ]up|reserves|face value|\bbasic\b|\bdiluted\b|per share|segment/i;
 const PL_MAP=[
+  ["excise",/excise duty|duties and taxes on sales/i],
   ["otherIncome",/other income/i],
   ["revenue",/revenue|net sales|^sales|turnover|income from operations/i],
   ["tax",/\btax/i],
@@ -386,7 +387,12 @@ function mapRows(tbl, map, skip){
   }
   const res={};
   for(const k in out){
-    const tots=out[k].filter(x=>x.isTotal); const use=tots.length?[tots[0]]:out[k];
+    const tots=out[k].filter(x=>x.isTotal); let use=tots.length?[tots[0]]:out[k];
+    if(!tots.length&&use.length>=3){
+      const sumOf=(arr,i)=>arr.reduce((t,x)=>t+(x.vals[i]||0),0);
+      const whole=use.find(r=>r.vals.every((v,i)=>{const rest=sumOf(use.filter(x=>x!==r),i);return Math.abs(v-rest)<=Math.max(1,Math.abs(v)*0.01);}));
+      if(whole) use=[whole];
+    }
     res[k]={labels:use.map(x=>x.label),vals:use[0].vals.map((_,i)=>use.reduce((s,x)=>s+(x.vals[i]||0),0))};
   }
   return {res,unmatched};
@@ -400,7 +406,10 @@ function analyse(plText, bsText){
   if(pl.years.length<2) throw new Error(`I found ${pl.years.length} year column${pl.years.length===1?"":"s"}${pl.years.length?" ("+pl.years.join(", ")+")":""}. Put each financial year in its own column, with the years in the header row. Two years is the minimum; three or more makes trends meaningful.`);
   const {res:P,unmatched}=mapRows(pl,PL_MAP,PL_SKIP);
   if(!P.revenue) throw new Error("No revenue line found. Name it 'Revenue', 'Revenue from operations', 'Net sales' or 'Turnover'.");
-  const Y=pl.years, n=Y.length, L=n-1, rev=P.revenue.vals;
+  const Y=pl.years, n=Y.length, L=n-1;
+  // Excise duty is a levy collected through revenue: analyse revenue net of it, and don't treat it as a cost to cut.
+  const netOfExcise=!!(P.excise&&P.excise.vals.some(v=>v>0));
+  const rev=netOfExcise?P.revenue.vals.map((v,i)=>v-(P.excise.vals[i]||0)):P.revenue.vals;
   if(rev.some(v=>v<=0)) throw new Error("Revenue must be positive in every year.");
   // cost lines
   const lines=[];
@@ -418,7 +427,8 @@ function analyse(plText, bsText){
   for(const k of ["materials","employee","power","freight","marketing","repairs","rent","travel","professional","other","depreciation","finance"]){
     if(P[k]) add(k,k,P[k].labels.length>1?CATS[k].name:P[k].labels[0],P[k].vals);
   }
-  unmatched.forEach((r,i)=>add("x"+i,"generic",r.label,r.vals));
+  // Unrecognised lines: keep real cost lines, drop fragments and non-cost rows (credits, zero rows, wrapped text).
+  unmatched.filter(r=>r.label.length>=4&&!/^[a-z(]/.test(r.label)&&r.vals.some(v=>v>0)&&r.vals.every(v=>v>=0)).forEach((r,i)=>add("x"+i,"generic",r.label,r.vals));
   const opexKeys=lines.filter(l=>l.ctrl);
   const opex=Y.map((_,i)=>opexKeys.reduce((s,l)=>s+l.vals[i],0));
   const dep=P.depreciation?P.depreciation.vals:Y.map(()=>0);
@@ -452,7 +462,7 @@ function analyse(plText, bsText){
     mk("dso","Receivable days",WC.dso,rev,"low");
     mk("dpo","Payable days",WC.dpo,cogsBase,"high");
   }
-  return {Y,n,L,rev,oi,opex,ebitda,pbt,tax,dep,fin,lines,WC,wcItems,rate,rateAssumed,BS,unmatchedCount:unmatched.length};
+  return {Y,n,L,rev,oi,opex,ebitda,pbt,tax,dep,fin,lines,WC,wcItems,rate,rateAssumed,BS,unmatchedCount:unmatched.length,netOfExcise};
 }
 
 /* ===================== Formatting ===================== */
@@ -506,13 +516,13 @@ function render(){
   // KPIs
   h+=`<div class="panel"><div class="eyebrow">2 · Summary, ${yrs}</div><h2 style="margin-bottom:12px">${headline(A,eM,ops,totalGap)}</h2>
   <div class="kpis">
-    <div class="kpi"><div class="s">Revenue ${esc(A.Y[L])}</div><div class="v">${fm(A.rev[L],0)}</div><div class="s">${UNIT} · ${revC==null?"":fm(revC)+"% CAGR"}</div></div>
+    <div class="kpi"><div class="s">Revenue ${esc(A.Y[L])}${A.netOfExcise?" (net of excise)":""}</div><div class="v">${fm(A.rev[L],0)}</div><div class="s">${UNIT} · ${revC==null?"":fm(revC)+"% CAGR"}</div></div>
     <div class="kpi"><div class="s">EBITDA margin</div><div class="v">${fm(eM[L])}%</div><div class="s ${eM[L]<eM[0]?"delta-bad":"delta-good"}">${pp(eM[L]-eM[0])} since ${esc(A.Y[0])}</div></div>
     <div class="kpi"><div class="s">Cost drift vs own best year</div><div class="v">${fm(totalGap,1)}</div><div class="s">${UNIT} a year · ${fm(pct(totalGap,A.rev[L]))}% of revenue</div></div>
     <div class="kpi"><div class="s">Cash tied up vs best year</div><div class="v">${A.WC?fm(wcCash,1):"–"}</div><div class="s">${A.WC?UNIT+" one-off release":"Add a balance sheet"}</div></div>
   </div>
   <div class="chart-wrap" style="margin-top:16px">${marginChart(A)}</div>
-  <p class="hint" style="margin:6px 0 0">EBITDA here = revenue minus operating costs, excluding other income. PBT includes other income, depreciation and finance cost.${A.unmatchedCount?` ${A.unmatchedCount} line item(s) did not match a known category and are shown under their own names.`:""}</p></div>`;
+  <p class="hint" style="margin:6px 0 0">${A.netOfExcise?"Revenue is shown net of excise duty, which is a levy collected through sales rather than a cost to cut. ":""}EBITDA here = revenue minus operating costs, excluding other income. PBT includes other income, depreciation and finance cost.${A.unmatchedCount?` ${A.unmatchedCount} line item(s) did not match a known category and are shown under their own names.`:""}</p></div>`;
   // Opportunity table
   h+=`<div class="panel"><div class="row" style="justify-content:space-between;align-items:flex-end">
     <div><div class="eyebrow">3 · Where costs drifted</div><h2>Each cost line as a share of revenue</h2>
@@ -696,17 +706,35 @@ function numOf(c){ c=c.replace(/\s/g,""); if(/^[-–—]$|^nil$/i.test(c)) retur
 function rowOf(line){
   const c=line.split(" | ").map(s=>s.trim()).filter(Boolean);
   let k=c.length; while(k>0&&isNumCell(c[k-1])) k--;
-  const label=c.slice(0,k).join(" ").replace(/^(\(?[ivxlc]{1,4}\)|\(?[a-h]\)|\d{1,2}[.)])\s+/i,"").replace(/\s+/g," ").trim();
+  const label=c.slice(0,k).join(" ").replace(/\s+/g," ").trim()
+    .replace(/^(\(?[ivxlc]{1,5}\)|\(?[a-h]\)|[IVXL]{1,5}\.?\s(?=[A-Z(])|\d{1,2}[.)]?\s(?=[A-Za-z(]))\s*/,"")
+    .replace(/^(\(?[a-h]\)|[a-h]\.)\s+/,"").trim();
   return {label,nums:c.slice(k).map(numOf)};
 }
 // Reads one statement table from a page: finds the header with dates, decides which columns are full years.
+const PL_STOP=/other comprehensive income|earnings per|profit\s*\/?\s*\(?loss\)?\s*for the (period|year|quarter)|profit for the (period|year|quarter)|net profit (after|for)|paid[- ]up equity|total comprehensive/i;
 function readTable(page,{fullYearOnly}){
   const lines=page.split("\n");
   const isYearNum=v=>v!=null&&Number.isInteger(v)&&v>=1990&&v<=2100;
-  const rows=lines.map((l,i)=>({i,...rowOf(l)})).filter(r=>r.nums.length>=1&&/[a-z]{3}/i.test(r.label)
-    &&!/^(page|note|notes)\b|ended|as at|particulars/i.test(r.label)&&!r.nums.every(isYearNum));
+  // Labels that wrap onto two lines: join a text-only line to the numbers line that follows it
+  // when the text ends mid-phrase or the next part starts in lower case.
+  const CONNECT=/\b(and|of|in|for|on|to|the|from|with|or|at|by|net)$|[,(&\/-]$/i;
+  const raw=[]; let prev="";
+  lines.forEach((l,i)=>{
+    const r=rowOf(l);
+    if(!r.nums.length){ if(/[a-z]{3}/i.test(r.label)) prev=prev&&CONNECT.test(prev)?prev+" "+r.label:r.label; return; }
+    let label=r.label;
+    if(prev&&(!label||/^[a-z]/.test(label)||CONNECT.test(prev))) label=(prev+" "+label).trim();
+    prev=""; raw.push({i,label,nums:r.nums});
+  });
+  let rows=raw.filter(r=>/[a-z]{3}/i.test(r.label)&&!/^(page|note|notes)\b|ended|as at|particulars/i.test(r.label)&&!r.nums.every(isYearNum));
   if(rows.length<4) return null;
   const first=rows[0].i;
+  if(fullYearOnly){
+    const stopAt=lines.findIndex((l,i)=>i>first&&PL_STOP.test(l));
+    if(stopAt>0) rows=rows.filter(r=>r.i<stopAt);
+    if(rows.length<4) return null;
+  }
   const hdr=lines.slice(Math.max(0,first-10),first).filter(l=>l.includes(" | ")||hasDate(l));
   let best=null;
   for(const l of hdr){ const ds=[...l.matchAll(DATE_G)]; if(ds.length&&(!best||ds.length>best.ds.length)) best={l,ds}; }
@@ -741,7 +769,8 @@ function readPdfLocally(pages){
   const cons=pages.some(p=>/consolidated/i.test(p));
   const rank=(re,bad)=>pages.map((p,i)=>({p,i,s:score(p,re)-(bad?score(p,bad):0)+(cons&&/consolidated/i.test(p)?3:0)})).filter(x=>x.s>=3).sort((a,b)=>b.s-a.s);
   let pl=null, plPage=null;
-  for(const x of rank(PL,/segment/gi).slice(0,6)){ const t=readTable(x.p,{fullYearOnly:true}); if(t&&/revenue|sales|income from operations/i.test(t.csv)){ pl=t; plPage=x; break; } }
+  // A statement that runs onto the next page: read both pages together until the profit line.
+  for(const x of rank(PL,/segment/gi).slice(0,6)){ const nxt=pages[x.i+1]||""; const startsNew=/statement|segment|balance sheet|assets and liabilities|cash flow|notes?\b|results/i.test(nxt.split("\n").slice(0,6).join(" ")); const text=PL_STOP.test(x.p)||!nxt||startsNew?x.p:x.p+"\n"+nxt; const t=readTable(text,{fullYearOnly:true}); if(t&&/revenue|sales|income from operations/i.test(t.csv)){ pl=t; plPage=x; break; } }
   if(!pl) return null;
   try{ analyse(pl.csv,""); }catch(_){ return null; }
   let bs=null;
