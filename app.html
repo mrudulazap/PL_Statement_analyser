@@ -186,6 +186,7 @@ td.num,th.num{text-align:right;white-space:nowrap}
         </div>
         <div class="actions">
           <button class="btn primary" id="runBtn">Analyse</button>
+          <button class="btn" id="clearBtn" type="button" disabled>Clear</button>
           <label class="unit" for="unitIn">Units <input id="unitIn" type="text" value="₹ Cr"></label>
         </div>
         <p class="err" id="errMsg" role="alert"></p>
@@ -486,6 +487,7 @@ function marginChart(A){
 /* ===================== Rendering ===================== */
 let A=null, CAPTURE=50;
 function render(){
+  syncClear();
   const R=document.getElementById("results");
   if(!A){R.innerHTML=`<div class="empty"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16M7 16V10M12 16V6M17 16v-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div><h2>Your report will appear here</h2><p>Add your profit and loss statement above. DriftLine reads it in your browser and builds the report from your figures only.</p><ul><li>Cost lines compared with your best year</li><li>Rupee value of the drift, at a recovery rate you choose</li><li>Cash tied up in working capital, if you add a balance sheet</li></ul></div>`;return;}
   const L=A.L, cap=CAPTURE/100;
@@ -593,6 +595,21 @@ function run(){
   catch(e){ A=null; setStatus(false); render(); resetChat(); errEl.textContent=e.message; window.dlTrack("diagnostic_error",{reason:String(e.message).slice(0,90)}); }
 }
 document.getElementById("runBtn").onclick=run;
+function syncClear(){ const b=document.getElementById("clearBtn"), p=document.getElementById("plText"), q=document.getElementById("bsText"); if(b) b.disabled=!(A||(p&&p.value.trim())||(q&&q.value.trim())); }
+const clearBtn=document.getElementById("clearBtn");
+[plT,bsT].forEach(t=>t.addEventListener("input",syncClear));
+clearBtn.onclick=()=>{
+  A=null; pendingPdf=null;
+  plT.value=""; bsT.value="";
+  ["plFile","bsFile"].forEach(id=>{document.getElementById(id).value="";});
+  [["plName","pl"],["bsName","bs"]].forEach(([id,k])=>{const n=document.getElementById(id); n.className=""; n.textContent=DEFAULT_LABEL[k];});
+  document.getElementById("unitIn").value="₹ Cr";
+  errEl.textContent=""; pdfAsk.hidden=true; pdfState.hidden=true; reviewNote.hidden=true;
+  document.getElementById("rawBox").open=false;
+  setPlop(false); setStatus(false); render(); resetChat(); syncClear();
+  window.dlTrack("report_clear");
+  document.getElementById("upTitle").scrollIntoView({behavior:"smooth",block:"center"});
+};
 
 async function readFile(file,target){
   errEl.textContent="";
@@ -611,7 +628,7 @@ async function readFile(file,target){
     setStatus(true); return true;
   }catch(e){ errEl.textContent=e.message||"Couldn't read that file."; return false; }
 }
-function setStatus(own){flag.hidden=!own;}
+function setStatus(own){flag.hidden=!own; syncClear();}
 async function takeFile(file,target,nameEl){ window.dlTrack("file_upload",{statement:target===plT?"pl":"bs",format:(file.name.split(".").pop()||"").toLowerCase().slice(0,5)});
   reviewNote.hidden=true;
   if(/\.pdf$/i.test(file.name)){ startPdf(file,target,nameEl); return; }

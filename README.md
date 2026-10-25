@@ -76,7 +76,9 @@ Events recorded (besides automatic page views):
 | `file_upload` | A statement file is added | `statement` (pl or bs), `format` |
 | `pdf_extract` | A PDF import finishes or is declined | `result` (ok, declined, scanned, not_found, off, failed…), `years`, `has_balance_sheet` |
 | `template_download` | Template downloaded | none |
+| `plop_open` | The Plop chat window is opened | none |
 | `plop_question` | A question is asked | `suggested` (yes or no) |
+| `report_clear` | The Clear button empties the report and inputs | none |
 | `capture_change` | Capture slider moved | `percent` |
 | `faq_open` | An FAQ is opened | `question` (number) |
 | `updates_signup` | Updates form submitted | `role`, `company_size` |
