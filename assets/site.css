@@ -1,6 +1,10 @@
 /* DriftLine design system.
-   Clean light fintech: white and soft-grey surfaces, deep navy type, the logo's teal as the only accent.
-   Orange ("drift") appears only inside data, to mark costs that crept up. One typeface: Inter. */
+   Clean light surfaces and deep navy type, with one signature: the drift spectrum, a gradient that runs
+   from teal (a cost at its best year) through violet to coral (a cost that has drifted). It colours the
+   brand moments: hero ribbon, buttons, the closing band. Data keeps flat colours so numbers stay easy to read.
+   Type: Bricolage Grotesque for headings, Inter for everything else. */
+
+@font-face{font-family:"Bricolage";font-weight:200 800;font-display:swap;src:url(/assets/fonts/bricolage-grotesque-latin-opsz.woff2) format("woff2-variations"),url(/assets/fonts/bricolage-grotesque-latin-opsz.woff2) format("woff2")}
 
 @font-face{font-family:"Inter";font-weight:400;font-display:swap;src:url(/assets/fonts/inter-latin-400-normal.woff2) format("woff2")}
 @font-face{font-family:"Inter";font-weight:500;font-display:swap;src:url(/assets/fonts/inter-latin-500-normal.woff2) format("woff2")}
@@ -10,7 +14,7 @@
 :root{
   color-scheme:light;
   --bg:#ffffff; --bg-2:#f6f8fa; --surface:#ffffff; --sunken:#f2f5f8;
-  --ink:#0f1e2e; --ink-2:#334155; --muted:#5f6c7b; --faint:#8a96a3;
+  --ink:#0d1730; --ink-2:#334155; --muted:#5f6c7b; --faint:#8a96a3;
   --line:#e5e9ef; --line-strong:#d3dae3;
   --brand:#0b6e5f; --brand-strong:#08594d; --brand-soft:#e8f3f0; --on-brand:#ffffff;
   --navy:#0f1e2e; --on-navy:#e9eef4; --on-navy-muted:#a9b6c4;
@@ -18,7 +22,10 @@
   --good:#1f7a4d; --good-soft:#e7f4ec; --warn:#9a5b06; --warn-soft:#fdf3e1; --bad:#b42318; --bad-soft:#fdecea;
   --shadow-sm:0 1px 2px rgba(15,30,46,.05);
   --shadow:0 1px 2px rgba(15,30,46,.04),0 16px 40px -12px rgba(15,30,46,.16);
-  --f-display:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --teal:#0fa38a; --violet:#6b5cff; --coral:#ff6a3d; --night:#0a1226;
+  --spectrum:linear-gradient(100deg,#0fa38a 0%,#3f8cff 38%,#6b5cff 62%,#ff6a3d 100%);
+  --spectrum-deep:linear-gradient(100deg,#0b7a68 0%,#3b5fe0 55%,#5b4cf0 100%);
+  --f-display:"Bricolage","Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --f-body:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --f-mono:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --radius:12px; --max:1120px;
@@ -34,8 +41,8 @@ a{color:var(--brand);text-underline-offset:3px}
 :focus-visible{outline:2px solid var(--brand);outline-offset:3px;border-radius:6px}
 .wrap{max-width:var(--max);margin:0 auto;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px))}
 h1,h2,h3,h4{font-family:var(--f-display);color:var(--ink);text-wrap:balance;margin:0;letter-spacing:-.02em}
-h1{font-weight:700;letter-spacing:-.03em}
-h2{font-weight:700}
+h1{font-weight:700;letter-spacing:-.035em;font-variation-settings:"opsz" 96}
+h2{font-weight:700;letter-spacing:-.025em;font-variation-settings:"opsz" 60}
 h3{font-weight:600;letter-spacing:-.01em}
 p{margin:0}
 .num,.mono{font-variant-numeric:tabular-nums}
@@ -43,8 +50,9 @@ p{margin:0}
 
 /* nav */
 .nav{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.88);backdrop-filter:saturate(1.6) blur(12px);-webkit-backdrop-filter:saturate(1.6) blur(12px);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+.nav::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--spectrum);opacity:.85}
 .nav .wrap{display:flex;align-items:center;gap:24px;height:68px}
-.logo{display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);font:700 19px/1 var(--f-display);letter-spacing:-.025em}
+.logo{display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);font:700 21px/1 var(--f-display);letter-spacing:-.03em}
 .logo svg{flex:none}
 .nav-links{display:flex;gap:2px;margin-left:auto;align-items:center}
 .nav-links a{color:var(--ink-2);text-decoration:none;font-weight:500;font-size:15px;padding:8px 14px;border-radius:8px}
@@ -55,9 +63,9 @@ p{margin:0}
 /* buttons */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:600 15px/1 var(--f-body);text-decoration:none;border-radius:8px;padding:12px 18px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);cursor:pointer;box-shadow:var(--shadow-sm);transition:background .15s ease,border-color .15s ease,color .15s ease}
 .btn:hover{border-color:var(--faint);background:var(--bg-2)}
-.btn.primary{background:var(--brand);border-color:var(--brand);color:var(--on-brand)}
+.btn.primary{background:var(--spectrum-deep);border-color:transparent;color:var(--on-brand);box-shadow:0 1px 2px rgba(13,23,48,.12),0 8px 20px -8px rgba(91,76,240,.55)}
 .nav-links .btn.primary,.btn.primary{color:var(--on-brand)}
-.btn.primary:hover{background:var(--brand-strong);border-color:var(--brand-strong)}
+.btn.primary:hover{background:var(--spectrum-deep);filter:brightness(1.08) saturate(1.1);border-color:transparent}
 .btn.ghost{background:transparent;border-color:transparent;box-shadow:none;color:var(--brand)}
 .btn.ghost:hover{background:var(--brand-soft)}
 .btn.lg{padding:15px 22px;font-size:16px}
