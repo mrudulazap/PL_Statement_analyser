@@ -154,18 +154,6 @@ section.alt{background:var(--bg-2);border-block:1px solid var(--line)}
 .trust h3{font-size:17px;margin-bottom:6px}
 .trust p{color:var(--muted);font-size:15px}
 
-/* free */
-.free{text-align:center}
-.free .big{font:800 clamp(72px,10vw,128px)/1 var(--f-display);letter-spacing:-.05em;background:var(--spectrum);-webkit-background-clip:text;background-clip:text;color:transparent;margin-top:10px;padding-bottom:.06em}
-.free h2{font-size:clamp(28px,3.2vw,38px);margin-top:16px}
-.free .intro{color:var(--muted);font-size:18px;max-width:36em;margin:14px auto 0}
-.free-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;margin-top:48px;text-align:left}
-@media (max-width:900px){.free-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:520px){.free-grid{grid-template-columns:minmax(0,1fr)}}
-.free-grid div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px}
-.free-grid b{display:block;font-weight:600;margin-bottom:6px}
-.free-grid span{color:var(--muted);font-size:14.5px}
-
 /* next + form */
 .next{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:64px;align-items:start}
 @media (max-width:900px){.next{grid-template-columns:minmax(0,1fr);gap:32px}}
@@ -428,24 +416,8 @@ form.ea .fine{font-size:13px;color:var(--faint)}
   </div>
 </section>
 
-<!-- FREE -->
-<section class="alt free" id="free">
-  <div class="wrap">
-    <div class="eyebrow">Free for everyone</div>
-    <div class="big num">₹0</div>
-    <h2>No plans, no trial, no catch.</h2>
-    <p class="intro">DriftLine is free for every business, CA firm and finance team. Run it as often as you like, on as many companies as you like.</p>
-    <div class="free-grid">
-      <div><b>The full report</b><span>Cost drift for every line, working-capital cash, and next steps for each finding.</span></div>
-      <div><b>Plop, your analyst</b><span>Ask questions about your numbers, within a fair-use limit.</span></div>
-      <div><b>No account needed</b><span>Open the page and upload. Nothing to sign up for, nothing to cancel.</span></div>
-      <div><b>Why it can be free</b><span>The analysis runs in your browser, so each report costs almost nothing to produce.</span></div>
-    </div>
-  </div>
-</section>
-
 <!-- NEXT + UPDATES -->
-<section id="next">
+<section class="alt" id="next">
   <div class="wrap next">
     <div class="copy">
       <div class="eyebrow">What's next</div>
@@ -478,7 +450,7 @@ form.ea .fine{font-size:13px;color:var(--faint)}
 </section>
 
 <!-- TRUST -->
-<section class="alt">
+<section>
   <div class="wrap">
     <div class="sec-head"><div class="eyebrow">Your data</div><h2>Your statements stay with you.</h2></div>
     <div class="trust">
@@ -490,7 +462,7 @@ form.ea .fine{font-size:13px;color:var(--faint)}
 </section>
 
 <!-- FAQ -->
-<section id="faq">
+<section class="alt" id="faq">
   <div class="wrap faqwrap">
     <div class="copy">
       <div class="eyebrow">FAQ</div>
