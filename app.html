@@ -840,7 +840,7 @@ function applyPdf(p,j,viaAI){
 /* ===================== Chat ===================== */
 const log=document.getElementById("chatLog"), chipsEl=document.getElementById("chatChips"), form=document.getElementById("chatForm"), inp=document.getElementById("chatIn"), sendB=document.getElementById("chatSend"), stopB=document.getElementById("chatStop"), note=document.getElementById("chatNote");
 let turns=[], liveOff=false, ctl=null;
-const CHIPS=["Why did EBITDA margin fall?","Which saving should we start with?","Is the materials increase really inefficiency?","How much cash is stuck in inventory?","What data should we pull before acting?"];
+const CHIPS=["Why did my profit margin fall?","Which saving should I start with?","Is the rise in material costs a real problem?","How much cash is stuck in stock?","What should I check before acting?"];
 function md(t){
   const lines=esc(t).split(/\n/); let out="", inList=false;
   for(const ln of lines){
@@ -862,7 +862,7 @@ document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&!plopPanel.hidden)
 function resetChat(){
   if(typeof plopDot!=="undefined") plopDot.hidden=!A||!plopPanel.hidden;
   turns=[]; log.innerHTML="";
-  addMsg("bot",md(A?`I'm Plop. I have your statements for ${A.Y[0]}–${A.Y[A.L]}. Ask me about margins, specific cost lines or working capital. I will say when the statements can't answer something.`:"I'm Plop. Add your statements and I'll answer questions about them: why margins moved, which costs to look at first, and what data to pull."));
+  addMsg("bot",md(A?`I'm Plop. I have your statements for ${A.Y[0]}–${A.Y[A.L]}. Ask me anything about your costs, profit or cash. I'll keep it short, and tell you when the statements can't answer something.`:"I'm Plop. Add your statements and I'll answer questions about them: why margins moved, which costs to look at first, and what data to pull."));
   inp.disabled=!A; sendB.disabled=!A; inp.placeholder=A?"Ask about your costs…":"Add your statements first";
   chipsEl.innerHTML=A?CHIPS.map(c=>`<button type="button">${esc(c)}</button>`).join(""):"";
   chipsEl.querySelectorAll("button").forEach(b=>b.onclick=()=>{inp.value=b.textContent;form.requestSubmit();});
@@ -882,10 +882,11 @@ function fallback(q){
   const s=q.toLowerCase(); const L=A.L;
   const ops=A.lines.filter(l=>l.ctrl&&l.gap>0).sort((a,b)=>b.gap-a.gap);
   const hit=A.lines.find(l=>s.includes(l.label.toLowerCase().split(" ")[0]));
-  if(hit) return `**${hit.label}**: ${fm(hit.ratio[L],2)}% of revenue in ${A.Y[L]} vs a best of ${fm(hit.ratio[hit.bestIdx],2)}% in ${A.Y[hit.bestIdx]}. Gap to best: ${money(hit.gap)} a year.`;
-  if(/cash|inventor|receiv|payab|working/.test(s)) return A.wcItems.length?A.wcItems.map(w=>`- ${w.label}: ${money(w.cash)} release vs ${A.Y[w.bestIdx]}`).join("\n"):"No working-capital drift found, or no balance sheet loaded.";
-  if(/margin|ebitda|profit/.test(s)){const e=A.ebitda.map((x,i)=>pct(x,A.rev[i]));return `EBITDA margin went from ${fm(e[0])}% to ${fm(e[L])}%. Largest drifts: ${ops.slice(0,3).map(l=>l.label+" ("+fm(l.gapPct,2)+" pp)").join(", ")}.`;}
-  return ops.length?`Largest gaps to best year:\n${ops.slice(0,4).map(l=>`- ${l.label}: ${money(l.gap)}`).join("\n")}`:"No cost line is above its best year.";
+  if(hit) return `**${hit.label}** was ${fm(hit.ratio[L],1)}% of sales in ${A.Y[L]}, against its best of ${fm(hit.ratio[hit.bestIdx],1)}% in ${A.Y[hit.bestIdx]}. Getting back to that level would save up to ${money(hit.gap)} a year.`;
+  if(/cash|inventor|receiv|payab|working/.test(s)) return A.wcItems.length?"Cash you could free up by getting back to your best year:\n"+A.wcItems.map(w=>`- ${w.label}: ${money(w.cash)} (best in ${A.Y[w.bestIdx]})`).join("\n"):"No extra cash is stuck in stock, customer dues or supplier payments, or no balance sheet was added.";
+  if(/check|pull|data|before/.test(s)&&ops.length) return `Before acting on ${ops[0].label.toLowerCase()}, check whether you paid more per unit or simply used more. Your purchase register by supplier for the last three years will show that. Also look for one-off items in that year.`;
+  if(/margin|ebitda|profit/.test(s)){const e=A.ebitda.map((x,i)=>pct(x,A.rev[i]));return `Your operating profit margin (EBITDA as a share of sales) went from ${fm(e[0])}% in ${A.Y[0]} to ${fm(e[L])}% in ${A.Y[L]}. The costs that grew most against sales: ${ops.slice(0,3).map(l=>l.label.toLowerCase()+" ("+fm(l.gapPct,1)+" points)").join(", ")}.`;}
+  return ops.length?`Biggest possible savings, compared with each cost's best year:\n${ops.slice(0,4).map(l=>`- ${l.label}: ${money(l.gap)}`).join("\n")}`:"Every cost is at or below its best level as a share of sales.";
 }
 form.addEventListener("submit",async e=>{
   e.preventDefault(); const q=inp.value.trim(); if(!q||ctl||!A) return;
