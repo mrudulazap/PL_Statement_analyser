@@ -117,3 +117,14 @@ Employee benefits expense,74,80,88,97
 - Annual statements cannot separate price, volume and mix, so every insight lists the data needed to confirm it.
 - Working-capital days use year-end balances, not averages.
 - Features under "What's next" are planned, not built; the site says so.
+
+## Second copy on GitHub Pages
+
+Some Indian mobile and broadband networks intermittently time out on `*.vercel.app`. A second copy is published to GitHub Pages on every push to `main` (`.github/workflows/pages.yml`, built by `scripts/build-pages.mjs`):
+
+https://mrudulazap.github.io/PL_Statement_analyser/
+
+- The diagnostic, charts, PDF reading in the browser and Excel/CSV upload all run in the browser, so they work fully on this copy.
+- Plop's AI answers, AI PDF reading and the updates form call the Vercel functions (`DRIFTLINE_API`, default `https://driftline-amber.vercel.app`). `vercel.json` allows these calls from `https://mrudulazap.github.io`. If the visitor's network can't reach Vercel at all, Plop falls back to its built-in answers.
+
+One-time setup: repo **Settings → Pages → Build and deployment → Source: GitHub Actions**.

@@ -58,6 +58,7 @@ function yearColumns(csv) {
 }
 
 export default async function handler(req, res) {
+  if (req.method === "OPTIONS") return res.status(204).end(); // CORS preflight from the GitHub Pages copy
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ error: "Use POST." });
